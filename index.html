@@ -1626,51 +1626,91 @@ Rules:
  // ── EARNING TIP FULL REFRESH ─────────────────────────────────────────────
  // Refreshes both tip text AND article link for each team member at startup.
 
- const tipConfig = [
-   {
-     textId: 'jack-tip-text',
-     linkId: 'jack-tip-link',
-     name: 'Jack Opalewski',
-     role: 'Program Manager at OwnerFirst Elevator Services',
-     context: 'Jack is an elevator industry veteran overseeing 5 active modernization projects in Michigan. He provides owner-side technical expertise on KONE, Schindler, and Otis projects for GLWA, WSU, Courtyard Marriott, and Bedrock Detroit. His income opportunity is in technical advisory retainers and consulting fees.'
+
+ // ── TEAM PROFILES (persistent, email-enriched) ────────────────────────────
+ const DEFAULT_PROFILES = {
+   jack: {
+     name: 'Jack Opalewski', role: 'Program Manager',
+     textId: 'jack-tip-text', linkId: 'jack-tip-link',
+     bio: 'Jack Opalewski is Program Manager at OwnerFirst Elevator Services. Elevator industry veteran with deep technical expertise via Buckley Belcher Consulting. Oversees 5 active Michigan modernization projects: GLWA Connor Creek (80%), GLWA NEP (40%), Courtyard Marriott (19%), Wayne County REBID-B (pursuit), WSU. Technical authority on ASME A17.1 compliance, spec writing, contractor oversight. Income levers: technical retainers ($2,500–$5,000/mo), expert witness ($350–$600/hr), government contract wins, spec library licensing.',
+     emailNotes: []
    },
-   {
-     textId: 'dave-tip-text',
-     linkId: 'dave-tip-link',
-     name: 'Dave Osowski',
-     role: 'Director of Operations at OwnerFirst Elevator Services',
-     context: 'Dave manages procurement, vendor relations, RFP tracking, and day-to-day project operations across a $4.7M active portfolio. He tracks 34+ RFPs, manages 12 vendor relationships, and has saved $48K in Q1. His income opportunity is in procurement performance bonuses, preferred vendor overrides, and operational efficiency gains.'
+   dave: {
+     name: 'Dave Osowski', role: 'Director of Operations',
+     textId: 'dave-tip-text', linkId: 'dave-tip-link',
+     bio: 'Dave Osowski is Director of Operations and co-founder at OwnerFirst Elevator Services. Manages procurement, 34+ RFP tracking across BidNet/Bonfire/SAM.gov, 12 vendor relationships, pay application processing, $4.7M active portfolio. Q1 cost savings: $48K. Detroit-based, bridging Roy Company construction management and Buckley Belcher elevator consulting expertise. Active pursuits: Wayne County REBID-B, GLWA pipeline, LinkedIn outreach to Top 50 Michigan properties. Income levers: procurement overrides (2% on $1M = $20K), performance bonuses, OwnerFirst Elevator Snapshot client conversions.',
+     emailNotes: []
    },
-   {
-     textId: 'andrew-tip-text',
-     linkId: 'andrew-tip-link',
-     name: 'Andrew Roy',
-     role: 'Owner / Investor at OwnerFirst Elevator Services',
-     context: 'Andrew is the principal investor and owner of OwnerFirst, holding approximately 40% equity. The business is valued at $1.4M with a $4.7M active project portfolio. His income opportunity is in management fees, equity appreciation, and passive revenue structures that scale without his direct labor involvement.'
+   andrew: {
+     name: 'Andrew Roy', role: 'Owner / Investor',
+     textId: 'andrew-tip-text', linkId: 'andrew-tip-link',
+     bio: 'Andrew Roy is Owner and principal investor in OwnerFirst Elevator Services (~40% equity). Founded The Roy Company in 2017, Detroit. Wayne State University BS+MS Civil Engineering, licensed Professional Engineer Michigan, 20+ years construction management and owner representation. Past portfolio: Detroit Opera House, Grosse Pointe Libraries, Corktown build-outs. OwnerFirst valued at $1.85M, up 22% YoY. Income levers: management fees (5–8% of project revenue), equity appreciation, passive revenue structures, partnership expansion.',
+     emailNotes: []
    }
+ };
+
+ function loadProfiles() {
+   try {
+     const saved = localStorage.getItem('owf_team_profiles');
+     if (saved) {
+       const parsed = JSON.parse(saved);
+       ['jack','dave','andrew'].forEach(k => {
+         if (parsed[k] && parsed[k].emailNotes) DEFAULT_PROFILES[k].emailNotes = parsed[k].emailNotes;
+       });
+     }
+   } catch(e) {}
+   return DEFAULT_PROFILES;
+ }
+
+ function saveProfiles(profiles) {
+   try { localStorage.setItem('owf_team_profiles', JSON.stringify(profiles)); } catch(e) {}
+ }
+
+ function enrichProfilesFromEmails(profiles, emailSnippets) {
+   if (!emailSnippets || emailSnippets.length < 10) return;
+   const note = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ': ' + emailSnippets.slice(0,200);
+   profiles.dave.emailNotes = [note, ...(profiles.dave.emailNotes || [])].slice(0,5);
+   saveProfiles(profiles);
+ }
+
+ const TEAM_PROFILES = loadProfiles();
+ const tipConfig = [
+   { ...TEAM_PROFILES.jack },
+   { ...TEAM_PROFILES.dave },
+   { ...TEAM_PROFILES.andrew }
  ];
 
  async function refreshEarningTips() {
    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-   const prompt = `You are a business strategy advisor for OwnerFirst Elevator Services, a Detroit-based elevator owner's rep and consulting firm. Today is ${today}. The company has a $4.7M active project portfolio with KONE, Schindler, and Otis across Michigan municipal, university, and commercial clients.
+   function buildCtx(p) {
+     let c = p.bio;
+     if (p.emailNotes && p.emailNotes.length) c += ' Recent intel: ' + p.emailNotes.join('; ');
+     return c;
+   }
 
-Generate a fresh, specific earning tip and one real article link for each of the 3 team members below. Each tip should reflect their specific role, current market conditions, and a concrete income-generating action they can take NOW.
+   const prompt = `You are a business strategy advisor for OwnerFirst Elevator Services, Detroit-based elevator owner's rep and consulting firm. Today is ${today}. Active portfolio: $4.7M across KONE, Schindler, Otis projects in Michigan — municipal (GLWA), university (WSU), hospitality (Courtyard Marriott), commercial (Bedrock Detroit).
 
-Respond with ONLY a raw JSON array — no markdown fences, no explanation, nothing before or after the JSON.
+Generate a hyper-specific earning tip AND a real linked article headline for each team member. Use web search to find a real, currently accessible article URL that is relevant to their role.
 
-Format: [{"tip":"...","articleTitle":"...","articleUrl":"...","articleSource":"..."},...]
+RESPOND WITH ONLY a raw JSON array (no markdown, no explanation):
+[{"tip":"...","articleTitle":"...","articleUrl":"...","articleSource":"..."},...]
 
-Team members:
-1. ${tipConfig[0].name} — ${tipConfig[0].role}. ${tipConfig[0].context}
-2. ${tipConfig[1].name} — ${tipConfig[1].role}. ${tipConfig[1].context}
-3. ${tipConfig[2].name} — ${tipConfig[2].role}. ${tipConfig[2].context}
+TEAM MEMBERS:
+1. ${TEAM_PROFILES.jack.name} — ${TEAM_PROFILES.jack.role}
+PROFILE: ${buildCtx(TEAM_PROFILES.jack)}
 
-Rules for each object:
-- tip: 2 sentences max. Start with a bold action verb. Include a specific dollar figure or percentage. Tie it to their actual role and portfolio context.
-- articleTitle: under 80 chars, title of a real published article or resource
-- articleUrl: a real working URL you are highly confident exists (e.g. hbr.org, forbes.com, enr.com, consultingsuccess.com, inc.com)
-- articleSource: publisher name only (e.g. "Harvard Business Review", "ENR", "Forbes")`;
+2. ${TEAM_PROFILES.dave.name} — ${TEAM_PROFILES.dave.role}
+PROFILE: ${buildCtx(TEAM_PROFILES.dave)}
+
+3. ${TEAM_PROFILES.andrew.name} — ${TEAM_PROFILES.andrew.role}
+PROFILE: ${buildCtx(TEAM_PROFILES.andrew)}
+
+RULES:
+- tip: 2 sentences. Action verb first. Specific $ or %. Role-specific and portfolio-aware.
+- articleTitle: real headline from ENR, Forbes, HBR, Inc, Facilities Net, Buildings.com, Elevator World, Constructor Magazine, etc.
+- articleUrl: search the web and confirm the URL resolves — only output verified URLs
+- articleSource: publication name only`;
 
    try {
      const res = await fetch('https://api.anthropic.com/v1/messages', {
