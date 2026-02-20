@@ -664,6 +664,7 @@
  .strategy-content-title { font-size: 0.9rem; font-weight: 700; color: var(--gold); margin-bottom: 0.3rem; }
  .strategy-content-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -701,6 +702,10 @@
  <div class="logo">OwnerFirst <span>Command Center</span></div>
  <div class="header-right">
  <div class="live-badge"><div class="live-dot"></div>Live</div>
+ <div id="gmail-status" style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:0.35rem;" onclick="gmailSignIn()" title="Connect Gmail">
+   <span id="gmail-dot" style="width:7px;height:7px;border-radius:50%;background:#aaa;display:inline-block;"></span>
+   <span id="gmail-label">Gmail</span>
+ </div>
  <div class="date-display" id="dateDisplay"></div>
  <button class="btn btn-ghost" onclick="document.getElementById('newsModal').classList.add('open')" >News Alert</button>
  </div>
@@ -771,6 +776,14 @@
  </div>
 
  <div class="section-title">Q1 2026 Company Goals</div>
+
+ <div id="gmail-updates-panel" style="display:none;background:var(--surface);border:1.5px solid var(--teal);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
+   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">
+     <div style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);">📧 Latest Project Emails</div>
+     <div id="gmail-sync-time" style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--muted);"></div>
+   </div>
+   <div id="gmail-updates-content" style="font-size:0.82rem;color:var(--text);line-height:1.7;"></div>
+ </div>
 
     <!-- Andrew -->
     <div class="goal-item">
@@ -995,7 +1008,7 @@
       <div class="card card-gold"><div class="card-label">Active Projects</div><div class="card-value">7</div></div>
       <div class="card"><div class="card-label">Award Pending</div><div class="card-value" style="color:var(--red)">1</div></div>
       <div class="card"><div class="card-label">In Construction</div><div class="card-value" style="color:var(--teal)">6</div></div>
-      <div class="card card-green"><div class="card-label">Last Email Sync</div><div class="card-value" style="font-size:1.1rem;">Feb 18, 2026</div></div>
+      <div class="card card-green"><div class="card-label">Last Email Sync</div><div class="card-value" style="font-size:1.1rem;" id="last-sync-time">Feb 18, 2026</div></div>
     </div>
 
     <div class="section-title">Hot — Act Now</div>
@@ -1242,6 +1255,12 @@
  <div class="section" id="tab-strategy">
 
   <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;">2026 Goals · Dave Osowski &amp; Jack Opalewski · OwnerFirst Elevator Services</div>
+
+  <div id="strategy-meeting-panel" style="display:none;background:var(--surface);border:1.5px solid var(--gold);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
+    <div style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;">📧 Strategy Meeting — Latest Email</div>
+    <div id="strategy-meeting-content" style="font-size:0.82rem;color:var(--text);line-height:1.6;"></div>
+    <div id="strategy-meeting-meta" style="font-size:0.68rem;color:var(--muted);margin-top:0.4rem;font-family:'DM Mono',monospace;"></div>
+  </div>
 
   <!-- SALES -->
   <div class="section-title">Sales Goals</div>
@@ -1692,6 +1711,31 @@ Rules for each object:
  }
 
  refreshEarningTips();
+ // ── GMAIL INTEGRATION ────────────────────────────────────────────────────
+ const GMAIL_CLIENT_ID = '992573205254-kbsmbgch5kqfv0hh7ibl3tqcmnig0747.apps.googleusercontent.com';
+ const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
+ let gmailAccessToken = null;
+ function initGmail() { const saved = localStorage.getItem('gmail_access_token'); const expiry = localStorage.getItem('gmail_token_expiry'); if (saved && expiry && Date.now() < parseInt(expiry)) { gmailAccessToken = saved; setGmailStatus('connected'); fetchGmailUpdates(); } else { setGmailStatus('disconnected'); } }
+ function setGmailStatus(state) { const dot = document.getElementById('gmail-dot'); const label = document.getElementById('gmail-label'); if (!dot) return; if (state === 'connected') { dot.style.background = '#4caf50'; label.textContent = 'Gmail ✓'; } else if (state === 'loading') { dot.style.background = 'var(--gold)'; label.textContent = 'Gmail…'; } else { dot.style.background = '#aaa'; label.textContent = 'Gmail'; } }
+ function gmailSignIn() { if (gmailAccessToken) { fetchGmailUpdates(); return; } const client = google.accounts.oauth2.initTokenClient({ client_id: GMAIL_CLIENT_ID, scope: GMAIL_SCOPES, callback: (resp) => { if (resp.access_token) { gmailAccessToken = resp.access_token; localStorage.setItem('gmail_access_token', gmailAccessToken); localStorage.setItem('gmail_token_expiry', (Date.now() + resp.expires_in * 1000).toString()); setGmailStatus('connected'); fetchGmailUpdates(); } } }); client.requestAccessToken(); }
+ async function gmailFetch(url) { const res = await fetch(url, { headers: { Authorization: 'Bearer ' + gmailAccessToken } }); if (res.status === 401) { localStorage.removeItem('gmail_access_token'); localStorage.removeItem('gmail_token_expiry'); gmailAccessToken = null; setGmailStatus('disconnected'); return null; } return res.json(); }
+ async function fetchGmailUpdates() {
+   setGmailStatus('loading');
+   try {
+     const projQ = 'newer_than:14d (from:sroy@theroyco.com OR from:kone OR subject:"pay app" OR subject:"change order" OR subject:"GLWA" OR subject:"Courtyard" OR subject:"Wayne County" OR subject:"OwnerFirst")';
+     const stratQ = 'subject:"OwnerFirst Strategy Meeting" newer_than:90d';
+     const [projData, stratData] = await Promise.all([gmailFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=15&q=' + encodeURIComponent(projQ)), gmailFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=5&q=' + encodeURIComponent(stratQ))]);
+     if (!projData) return;
+     let projectEmails = [];
+     if (projData.messages && projData.messages.length) { const fetches = projData.messages.slice(0,10).map(m => gmailFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + m.id + '?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date')); const results = await Promise.all(fetches); projectEmails = results.filter(Boolean).map(msg => { const headers = msg.payload.headers; const get = (n) => (headers.find(h => h.name === n) || {}).value || ''; return { subject: get('Subject'), from: get('From'), date: get('Date'), snippet: msg.snippet }; }); }
+     let strategyEmail = null;
+     if (stratData && stratData.messages && stratData.messages.length) { const msg = await gmailFetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + stratData.messages[0].id + '?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date'); if (msg) { const headers = msg.payload.headers; const get = (n) => (headers.find(h => h.name === n) || {}).value || ''; strategyEmail = { subject: get('Subject'), from: get('From'), date: get('Date'), snippet: msg.snippet }; } }
+     if (projectEmails.length) { const prompt = 'Summarize these OwnerFirst project email snippets into 3-5 bullet points focusing on pay apps, change orders, contractor responses. Use project names. Respond with <li> tags only.\n\n' + projectEmails.map(e => 'FROM: ' + e.from + ' SUBJECT: ' + e.subject + ' SNIPPET: ' + e.snippet).join('\n---\n'); const aiRes = await fetch(PROXY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: prompt }] }) }); const aiData = await aiRes.json(); const summary = aiData.content?.[0]?.text || ''; document.getElementById('gmail-updates-panel').style.display = 'block'; document.getElementById('gmail-updates-content').innerHTML = '<ul style="margin:0;padding-left:1.2rem;list-style:disc;">' + summary + '</ul>'; document.getElementById('gmail-sync-time').textContent = 'Synced ' + new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}); const lst = document.getElementById('last-sync-time'); if(lst) lst.textContent = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}); }
+     if (strategyEmail) { document.getElementById('strategy-meeting-panel').style.display = 'block'; document.getElementById('strategy-meeting-content').textContent = strategyEmail.snippet; document.getElementById('strategy-meeting-meta').textContent = 'From: ' + strategyEmail.from + ' · ' + new Date(strategyEmail.date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}); }
+     setGmailStatus('connected');
+   } catch(e) { console.error('Gmail error:', e); setGmailStatus('connected'); }
+ }
+ window.addEventListener('load', () => { setTimeout(initGmail, 1500); });
  // ─────────────────────────────────────────────────────────────────────────
 </script>
 </body>
