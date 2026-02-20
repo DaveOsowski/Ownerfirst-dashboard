@@ -1711,6 +1711,91 @@ Rules for each object:
  }
 
  refreshEarningTips();
+
+
+ // ── LIVE ELEVATOR NEWS ───────────────────────────────────────────────────
+ async function fetchLiveNews() {
+   try {
+     const prompt = `You are an elevator industry intelligence assistant for OwnerFirst Elevator Services, a Michigan-based elevator consulting and owner's representative firm.
+
+Search the web for the LATEST elevator industry news from the past 7 days. Focus on:
+- Elevator modernization contracts, RFPs, and awards (especially Midwest/Michigan)
+- KONE, Otis, Schindler, TK Elevator news
+- ASME A17.1 code updates or compliance deadlines
+- Federal/state infrastructure funding for vertical transportation
+- Elevator safety incidents or regulatory changes
+- Michigan, Detroit, or Great Lakes region building/facility news
+- Commercial real estate trends affecting elevator demand
+
+Return ONLY a JSON object in this exact format (no markdown, no explanation):
+{
+  "ticker": ["short headline 1 (max 10 words)", "short headline 2", "short headline 3", "short headline 4", "short headline 5"],
+  "briefing": [
+    {"title": "Full headline", "source": "Source Name", "summary": "1-2 sentence summary"},
+    {"title": "Full headline", "source": "Source Name", "summary": "1-2 sentence summary"},
+    {"title": "Full headline", "source": "Source Name", "summary": "1-2 sentence summary"},
+    {"title": "Full headline", "source": "Source Name", "summary": "1-2 sentence summary"}
+  ],
+  "date": "Today's date as Mon DD, YYYY"
+}`;
+
+     const res = await fetch(PROXY_URL, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         model: 'claude-sonnet-4-20250514',
+         max_tokens: 1200,
+         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+         messages: [{ role: 'user', content: prompt }]
+       })
+     });
+     const data = await res.json();
+
+     // Extract text from content blocks (skip tool_use/tool_result)
+     const text = (data.content || [])
+       .filter(b => b.type === 'text')
+       .map(b => b.text)
+       .join('');
+
+     // Parse JSON from response
+     const clean = text.replace(/```json|```/g, '').trim();
+     const start = clean.indexOf('{');
+     const end = clean.lastIndexOf('}');
+     if (start === -1 || end === -1) throw new Error('No JSON found');
+     const news = JSON.parse(clean.slice(start, end + 1));
+
+     // Update ticker
+     if (news.ticker && news.ticker.length) {
+       const doubled = [...news.ticker, ...news.ticker]; // duplicate for seamless scroll
+       const tickerEl = document.getElementById('ticker');
+       if (tickerEl) {
+         tickerEl.innerHTML = doubled.map(t => `<span class="ticker-item">${t}</span>`).join('');
+       }
+     }
+
+     // Update CEO briefing modal
+     if (news.briefing && news.briefing.length) {
+       const dateEl = document.getElementById('ceo-briefing-date');
+       const itemsEl = document.getElementById('ceo-briefing-items');
+       if (dateEl) dateEl.textContent = 'CEO BRIEFING · ' + (news.date || new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})).toUpperCase();
+       if (itemsEl) {
+         itemsEl.innerHTML = news.briefing.map(item => `
+           <div class="news-item-modal">
+             <div class="news-item-modal-title">${item.title}</div>
+             <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;line-height:1.5;">${item.summary}</div>
+             <div class="news-item-modal-source">${item.source.toUpperCase()} · LIVE</div>
+           </div>
+         `).join('');
+       }
+     }
+
+     console.log('Live news loaded:', news.ticker?.length, 'ticker items,', news.briefing?.length, 'briefing items');
+   } catch(e) {
+     console.warn('Live news fetch failed, keeping static content:', e.message);
+   }
+ }
+ // ─────────────────────────────────────────────────────────────────────────
+
  // ── GMAIL INTEGRATION ────────────────────────────────────────────────────
  const GMAIL_CLIENT_ID = '992573205254-kbsmbgch5kqfv0hh7ibl3tqcmnig0747.apps.googleusercontent.com';
  const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
@@ -1735,7 +1820,7 @@ Rules for each object:
      setGmailStatus('connected');
    } catch(e) { console.error('Gmail error:', e); setGmailStatus('connected'); }
  }
- window.addEventListener('load', () => { setTimeout(initGmail, 1500); });
+ window.addEventListener('load', () => { setTimeout(initGmail, 1500); fetchLiveNews(); });
  // ─────────────────────────────────────────────────────────────────────────
 </script>
 </body>
