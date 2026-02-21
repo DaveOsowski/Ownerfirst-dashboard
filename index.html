@@ -1620,7 +1620,7 @@ Rules:
 - source: publisher in ALL CAPS (e.g. "ELEVATOR WORLD", "ENR", "BUILDINGS MAGAZINE", "MICHIGAN CONTRACTOR")
 - age: realistic recency (e.g. "2h ago", "4h ago", "1d ago")`;
 
-   try 
+   try {
      const res = await fetch(PROXY_URL, {
        method: 'POST',
        headers: { 'Content-Type': 'application/json' },
