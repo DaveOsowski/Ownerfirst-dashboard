@@ -1620,7 +1620,6 @@ Rules:
      bio: `ANDREW ROY — Owner & Principal Investor, OwnerFirst Elevator Services (100% equity). LinkedIn: Founded The Roy Company 2017 Detroit, Wayne State BS+MS Civil Engineering, licensed PE Michigan, 20+ years CM and owner-rep. Projects include Detroit Opera House, Grosse Pointe Libraries, Corktown build-outs. OwnerFirst valued $1.85M up 22% YoY, $4.7M active portfolio. Personal: sailing, skiing, family. Salary benchmark: construction firm principals Michigan $150K–$350K+ incl. equity distributions and mgmt fees. Tips: OWNER-LEVEL thinking — mgmt fee structure (5–8% of $4.7M = $235K–$376K/yr), equity appreciation strategy, passive income mechanisms, scaling the firm without personal time investment, JV expansion into adjacent specialties.`,
      emailNotes: []
    }
- }
  };
 
  function loadProfiles() {
@@ -1663,7 +1662,7 @@ Rules:
      return c;
    }
 
-   function salaryCtx(key) { const h = HIERARCHY[key]; return '[Rank ' + h.rank + ' of 3 — ' + h.salaryBenchmark.note + ']'; }
+   function salaryCtx(key) { return '[Rank ' + HIERARCHY[key].rank + '/3 — ' + HIERARCHY[key].salaryBenchmark + ']'; }
 
    const prompt = `You are a senior business strategy and compensation advisor for OwnerFirst Elevator Services (Detroit elevator owner's rep, JV of The Roy Company + Buckley Belcher Consulting). Today is ${today}. Portfolio: $4.7M across KONE, Schindler, Otis in Michigan.
 
