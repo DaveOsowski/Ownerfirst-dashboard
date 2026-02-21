@@ -1594,33 +1594,25 @@ Rules:
 
 
  // ── TEAM PROFILES (persistent, email-enriched) ────────────────────────────
- // ── COMPANY HIERARCHY & SALARY BENCHMARKS (sourced Feb 2026) ─────────────
- const HIERARCHY = {
-   andrew: { rank: 1, salaryBenchmark: 'Owner/principals Michigan avg $150K–$350K+ incl. equity distributions, mgmt fees, profit share.' },
-   dave:   { rank: 2, salaryBenchmark: 'Director of Operations Michigan avg $138,819 (Glassdoor 2025), range $106K–$183K. Consulting directors avg $170K nationally (PayScale 2026).' },
-   jack:   { rank: 3, salaryBenchmark: 'Elevator Project Manager US avg $92K–$102K (Glassdoor/ZipRecruiter 2025). Entry-level $48K–$73K. First job — at or below midpoint.' }
- };
-
  const DEFAULT_PROFILES = {
    jack: {
-     name: 'Jack Opalewski', role: 'Program Manager', hierarchyRank: 3,
+     name: 'Jack Opalewski', role: 'Program Manager',
      textId: 'jack-tip-text', linkId: 'jack-tip-link',
-     bio: `JACK OPALEWSKI — Program Manager, OwnerFirst Elevator Services. THIS IS HIS FIRST PROFESSIONAL JOB. LinkedIn: Buckley Belcher Consulting connection, elevator technical training, vertical transportation systems. Role: hands-on PM across 5 Michigan modernization projects — GLWA Connor Creek (80%), GLWA NEP (40%), Courtyard Marriott (19%), Wayne County REBID-B (pursuit), WSU. Daily: ASME A17.1 compliance, spec writing, contractor coordination, field oversight. Salary benchmark: entry-level $48K–$73K, mid-career $93K–$123K — Jack is at entry stage. Tips MUST be first-job appropriate: QEI/NAEC certifications, LinkedIn presence, volunteer for extra project scope, find a mentor, attend BOMA/NAEC Michigan events. Do NOT suggest consulting retainers or expert witness fees — too senior for this stage.`,
+     bio: 'Jack Opalewski is Program Manager at OwnerFirst Elevator Services. Elevator industry veteran with deep technical expertise via Buckley Belcher Consulting. Oversees 5 active Michigan modernization projects: GLWA Connor Creek (80%), GLWA NEP (40%), Courtyard Marriott (19%), Wayne County REBID-B (pursuit), WSU. Technical authority on ASME A17.1 compliance, spec writing, contractor oversight. Income levers: technical retainers ($2,500–$5,000/mo), expert witness ($350–$600/hr), government contract wins, spec library licensing.',
      emailNotes: []
    },
    dave: {
-     name: 'Dave Osowski', role: 'Director of Operations', hierarchyRank: 2,
+     name: 'Dave Osowski', role: 'Director of Operations',
      textId: 'dave-tip-text', linkId: 'dave-tip-link',
-     bio: `DAVE OSOWSKI — Director of Operations & co-founder, OwnerFirst Elevator Services. LinkedIn: construction management, procurement, owner's rep services, Detroit market, Roy Company. Role: manages 34+ RFPs (BidNet/Bonfire/SAM.gov), 12 vendor relationships, $4.7M active portfolio, pay app processing, Basso Marketing ($1,500/mo SEO), Elevator Snapshot tool deployment. Q1 cost savings: $48K. Salary benchmark: Dir Ops Michigan avg $138,819, range $106K–$183K — bonus/profit-share common. Tips: mid-career income acceleration — performance bonuses, vendor override structures (2% on $1M = $20K), pipeline growth to $10M, LinkedIn thought leadership for inbound clients, automation to reduce overhead.`,
+     bio: 'Dave Osowski is Director of Operations and co-founder at OwnerFirst Elevator Services. Manages procurement, 34+ RFP tracking across BidNet/Bonfire/SAM.gov, 12 vendor relationships, pay application processing, $4.7M active portfolio. Q1 cost savings: $48K. Detroit-based, bridging Roy Company construction management and Buckley Belcher elevator consulting expertise. Active pursuits: Wayne County REBID-B, GLWA pipeline, LinkedIn outreach to Top 50 Michigan properties. Income levers: procurement overrides (2% on $1M = $20K), performance bonuses, OwnerFirst Elevator Snapshot client conversions.',
      emailNotes: []
    },
    andrew: {
-     name: 'Andrew Roy', role: 'Owner / Investor', hierarchyRank: 1,
+     name: 'Andrew Roy', role: 'Owner / Investor',
      textId: 'andrew-tip-text', linkId: 'andrew-tip-link',
-     bio: `ANDREW ROY — Owner & Principal Investor, OwnerFirst Elevator Services (100% equity). LinkedIn: Founded The Roy Company 2017 Detroit, Wayne State BS+MS Civil Engineering, licensed PE Michigan, 20+ years CM and owner-rep. Projects include Detroit Opera House, Grosse Pointe Libraries, Corktown build-outs. OwnerFirst valued $1.85M up 22% YoY, $4.7M active portfolio. Personal: sailing, skiing, family. Salary benchmark: construction firm principals Michigan $150K–$350K+ incl. equity distributions and mgmt fees. Tips: OWNER-LEVEL thinking — mgmt fee structure (5–8% of $4.7M = $235K–$376K/yr), equity appreciation strategy, passive income mechanisms, scaling the firm without personal time investment, JV expansion into adjacent specialties.`,
+     bio: 'Andrew Roy is Owner and principal investor in OwnerFirst Elevator Services (~40% equity). Founded The Roy Company in 2017, Detroit. Wayne State University BS+MS Civil Engineering, licensed Professional Engineer Michigan, 20+ years construction management and owner representation. Past portfolio: Detroit Opera House, Grosse Pointe Libraries, Corktown build-outs. OwnerFirst valued at $1.85M, up 22% YoY. Income levers: management fees (5–8% of project revenue), equity appreciation, passive revenue structures, partnership expansion.',
      emailNotes: []
    }
- }
  };
 
  function loadProfiles() {
@@ -1663,31 +1655,28 @@ Rules:
      return c;
    }
 
-   function salaryCtx(key) { return '[Rank ' + HIERARCHY[key].rank + '/3 — ' + HIERARCHY[key].salaryBenchmark + ']'; }
+   const prompt = `You are a business strategy advisor for OwnerFirst Elevator Services, Detroit-based elevator owner's rep and consulting firm. Today is ${today}. Active portfolio: $4.7M across KONE, Schindler, Otis projects in Michigan — municipal (GLWA), university (WSU), hospitality (Courtyard Marriott), commercial (Bedrock Detroit).
 
-   const prompt = `You are a senior business strategy and compensation advisor for OwnerFirst Elevator Services (Detroit elevator owner's rep, JV of The Roy Company + Buckley Belcher Consulting). Today is ${today}. Portfolio: $4.7M across KONE, Schindler, Otis in Michigan.
+Generate a hyper-specific earning tip AND a real linked article headline for each team member. Use web search to find a real, currently accessible article URL that is relevant to their role.
 
-Generate ONE hyper-personalized earning tip per team member using: (1) their LinkedIn background and actual role, (2) company hierarchy rank (1=Owner, 3=Entry-level), (3) real salary benchmarks for similar roles in Michigan, (4) a web-searched verified article URL relevant to their career stage.
-
-RESPOND ONLY as a raw JSON array — no markdown, no preamble:
+RESPOND WITH ONLY a raw JSON array (no markdown, no explanation):
 [{"tip":"...","articleTitle":"...","articleUrl":"...","articleSource":"..."},...]
 
-MEMBER 1 — ${TEAM_PROFILES.jack.name} | Rank 3 of 3 (Entry Level)
-${salaryCtx('jack')}
-${buildContext(TEAM_PROFILES.jack)}
-TIP FOCUS: First job. Certifications (QEI, NAEC), career visibility, skill stacking. NO retainers or expert witness.
+TEAM MEMBERS:
+1. ${TEAM_PROFILES.jack.name} — ${TEAM_PROFILES.jack.role}
+PROFILE: ${buildCtx(TEAM_PROFILES.jack)}
 
-MEMBER 2 — ${TEAM_PROFILES.dave.name} | Rank 2 of 3 (Mid-Career Director)
-${salaryCtx('dave')}
-${buildContext(TEAM_PROFILES.dave)}
-TIP FOCUS: Performance bonuses, vendor structures, pipeline to $10M, LinkedIn thought leadership for inbound.
+2. ${TEAM_PROFILES.dave.name} — ${TEAM_PROFILES.dave.role}
+PROFILE: ${buildCtx(TEAM_PROFILES.dave)}
 
-MEMBER 3 — ${TEAM_PROFILES.andrew.name} | Rank 1 of 3 (Owner)
-${salaryCtx('andrew')}
-${buildContext(TEAM_PROFILES.andrew)}
-TIP FOCUS: Mgmt fee optimization (5–8% of $4.7M = $235K–$376K), equity growth, passive income, firm scalability.
+3. ${TEAM_PROFILES.andrew.name} — ${TEAM_PROFILES.andrew.role}
+PROFILE: ${buildCtx(TEAM_PROFILES.andrew)}
 
-RULES: tip=2 sentences, action verb first, specific $ or %. articleUrl=USE WEB SEARCH to verify URL is live. articleSource=publication name only.
+RULES:
+- tip: 2 sentences. Action verb first. Specific $ or %. Role-specific and portfolio-aware.
+- articleTitle: real headline from ENR, Forbes, HBR, Inc, Facilities Net, Buildings.com, Elevator World, Constructor Magazine, etc.
+- articleUrl: search the web and confirm the URL resolves — only output verified URLs
+- articleSource: publication name only`;
 
    try {
      const res = await fetch('https://api.anthropic.com/v1/messages', {
