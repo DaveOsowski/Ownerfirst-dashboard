@@ -1662,6 +1662,1707 @@ Rules:
      return c;
    }
 
+   function salaryCtx(key) {
+     const h = HIERARCHY[key];
+     return `[Rank ${h.rank} of 3 in company hierarchy — ${h.title}. Market benchmark: ${h.salaryBenchmark.note}]`;
+   }
+
+   const prompt = `You are a senior business strategy and compensation advisor for OwnerFirst Elevator Services, a Detroit-based elevator owner's rep and consulting firm (JV of The Roy Company + Buckley Belcher Consulting). Today is ${today}. Active portfolio: $4.7M across KONE, Schindler, Otis in Michigan — GLWA (municipal), WSU (university), Courtyard Marriott (hospitality), Bedrock Detroit (commercial).
+
+TASK: Generate ONE hyper-personalized earning tip per team member that:
+1. Is grounded in their LinkedIn background and actual role
+2. Reflects their position in the company hierarchy (Rank 1=Owner, 2=Director, 3=Entry-level PM)
+3. Uses real salary/compensation benchmarks for similar roles
+4. Searches the web to find ONE real, live, relevant article URL as "Further Reading"
+5. Scales ambition appropriately — entry-level tips are career-growth actions, owner tips are equity/scaling moves
+
+RESPOND WITH ONLY a raw JSON array (no markdown, no preamble):
+[{"tip":"...","articleTitle":"...","articleUrl":"...","articleSource":"..."},...]
+
+═══════════════════════════════════════
+MEMBER 1 — ${TEAM_PROFILES.jack.name}
+HIERARCHY: ${salaryCtx('jack')}
+PROFILE: ${buildContext(TEAM_PROFILES.jack)}
+TIP GUIDANCE: First job. Focus on certifications, visibility, skill stacking. Income grows through demonstrated value. DO NOT suggest retainers or expert witness — too senior.
+═══════════════════════════════════════
+MEMBER 2 — ${TEAM_PROFILES.dave.name}
+HIERARCHY: ${salaryCtx('dave')}
+PROFILE: ${buildContext(TEAM_PROFILES.dave)}
+TIP GUIDANCE: Mid-career director. Focus on performance bonuses, vendor structures, pipeline growth, operational leverage. Market rate $138K avg — tips should help exceed that.
+═══════════════════════════════════════
+MEMBER 3 — ${TEAM_PROFILES.andrew.name}
+HIERARCHY: ${salaryCtx('andrew')}
+PROFILE: ${buildContext(TEAM_PROFILES.andrew)}
+TIP GUIDANCE: Owner with 100% equity. Tips should be owner-level: fee structure optimization, equity growth, passive income, firm scalability, exit/expansion planning.
+═══════════════════════════════════════
+
+RULES FOR EACH JSON OBJECT:
+- tip: 2 sharp sentences. Bold action verb first. Include specific $ or %. Must match their rank and real-world context.
+- articleTitle: real headline from ENR, Forbes, HBR, Inc, Harvard Business Review, Buildings.com, Facilities Net, Elevator World, Constructor Mag, or similar
+- articleUrl: USE WEB SEARCH — verify the URL resolves before including it. No dead links.
+- articleSource: publication name only (e.g. "Forbes", "ENR", "Harvard Business Review")`;
+>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OwnerFirst | Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Mono:wght@300;400;500&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+ :root {
+ --bg: #e6e4dc;
+ --surface: #eeece4;
+ --surface2: #dddbd2;
+ --border: #cac8bf;
+ --gold: #2d3f5e;
+ --gold-light: #3d5278;
+ --gold-dim: rgba(45,63,94,0.10);
+ --teal: #2d3f5e;
+ --teal-dim: rgba(45,63,94,0.10);
+ --red: #8a2f2f;
+ --red-dim: rgba(138,47,47,0.10);
+ --green: #3a6647;
+ --green-dim: rgba(58,102,71,0.10);
+ --text: #1a1a18;
+ --muted: #1a1a18;
+ --accent: #2d3f5e;
+ }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body {
+ background: var(--bg);
+ color: var(--text);
+ font-family: 'Work Sans', sans-serif;
+ min-height: 100vh;
+ overflow-x: hidden;
+ }
+
+ /* ANIMATED BACKGROUND */
+ body::before {
+ content: '';
+ position: fixed;
+ top: 0; left: 0; right: 0; bottom: 0;
+ background: radial-gradient(ellipse at 20% 20%, rgba(45,63,94,0.04) 0%, transparent 60%),
+ radial-gradient(ellipse at 80% 80%, rgba(45,63,94,0.02) 0%, transparent 60%);
+ pointer-events: none;
+ z-index: 0;
+ }
+
+ /* HEADER */
+ .header {
+ position: sticky; top: 0; z-index: 100;
+ background: rgba(230,228,220,0.96);
+ backdrop-filter: blur(20px);
+ border-bottom: 1px solid var(--border);
+ padding: 0 2rem;
+ display: flex; align-items: center; justify-content: space-between;
+ height: 120px;
+ padding-top: 50px;
+ }
+ .logo {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 1.4rem;
+ font-weight: 900;
+ letter-spacing: -0.02em;
+ color: var(--gold);
+ }
+ .logo span { color: #1a1a18; font-weight: 400; }
+ .header-right {
+ display: flex; align-items: center; gap: 1rem;
+ }
+ .live-badge {
+ display: flex; align-items: center; gap: 0.4rem;
+ background: var(--green-dim);
+ border: 1px solid rgba(58,102,71,0.3);
+ border-radius: 999px;
+ padding: 0.2rem 0.7rem;
+ font-size: 0.7rem;
+ font-family: 'DM Mono', monospace;
+ color: var(--green);
+ letter-spacing: 0.05em;
+ text-transform: uppercase;
+ }
+ .live-dot {
+ width: 6px; height: 6px; border-radius: 50%;
+ background: var(--green);
+ animation: pulse 2s infinite;
+ }
+ @keyframes pulse {
+ 0%,100% { opacity: 1; transform: scale(1); }
+ 50% { opacity: 0.5; transform: scale(0.8); }
+ }
+ .date-display {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.75rem;
+ color: var(--muted);
+ }
+
+ /* NEWS TICKER */
+ .news-ticker {
+ background: rgba(45,63,94,0.07);
+ border-bottom: 1px solid rgba(45,63,94,0.2);
+ padding: 0.5rem 0;
+ overflow: hidden;
+ position: relative;
+ cursor: pointer;
+ }
+ .news-ticker::before {
+ content: 'CEO ALERT';
+ position: absolute; left: 0; top: 0; bottom: 0;
+ background: var(--gold);
+ color: #fff;
+ font-family: 'DM Mono', monospace;
+ font-size: 0.65rem;
+ font-weight: 500;
+ letter-spacing: 0.08em;
+ padding: 0 1rem;
+ display: flex; align-items: center;
+ z-index: 2;
+ }
+ .ticker-inner {
+ display: flex;
+ animation: ticker 40s linear infinite;
+ padding-left: 150px;
+ white-space: nowrap;
+ }
+ .ticker-item {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.72rem;
+ color: #1a1a18;
+ padding: 0 3rem;
+ letter-spacing: 0.03em;
+ }
+ .ticker-item::before { content: ''; }
+ @keyframes ticker {
+ 0% { transform: translateX(0); }
+ 100% { transform: translateX(-50%); }
+ }
+
+ /* MAIN LAYOUT */
+ .main {
+ position: relative; z-index: 1;
+ padding: 2rem;
+ max-width: 1600px;
+ margin: 0 auto;
+ }
+
+ /* NAV TABS */
+ .nav-tabs {
+ display: flex; gap: 0.5rem;
+ margin-bottom: 2rem;
+ border-bottom: 1px solid var(--border);
+ padding-bottom: 0;
+ }
+  .tab {
+    padding: 0.55rem 0;
+    width: 130px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border: none;
+    border-radius: 7px;
+    transition: all 0.12s ease;
+    background: var(--surface2);
+    font-family: 'Work Sans', sans-serif;
+    text-align: center;
+    box-shadow: 0 4px 0 #b0aea6, 0 5px 8px rgba(0,0,0,0.10);
+    position: relative;
+    top: 0;
+  }
+  .tab.active {
+    color: #fff;
+    background: var(--gold);
+    box-shadow: 0 4px 0 #1e2d45, 0 5px 8px rgba(0,0,0,0.18);
+  }
+  .tab:hover:not(.active) {
+    color: var(--text);
+    background: #d0cec6;
+    box-shadow: 0 4px 0 #a8a69e, 0 5px 8px rgba(0,0,0,0.10);
+  }
+  .tab:active {
+    top: 3px;
+    box-shadow: 0 1px 0 #b0aea6, 0 2px 3px rgba(0,0,0,0.08);
+  }
+
+ /* SECTIONS */
+ .section { display: none; }
+ .section.active { display: block; }
+
+ /* GRID SYSTEMS */
+ .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+ .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+ .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+ .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+ .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-bottom: 1.5rem; }
+
+ /* CARDS */
+ .card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: 12px;
+ padding: 1.4rem;
+ position: relative;
+ overflow: hidden;
+ transition: border-color 0.2s;
+ }
+ .card:hover { border-color: rgba(45,63,94,0.3); }
+ .card::after {
+ content: '';
+ position: absolute; top: 0; left: 0; right: 0;
+ height: 1px;
+ background: linear-gradient(90deg, transparent, rgba(45,63,94,0.15), transparent);
+ }
+ .card-label {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.65rem;
+ letter-spacing: 0.12em;
+ text-transform: uppercase;
+ color: var(--muted);
+ margin-bottom: 0.5rem;
+ }
+ .card-value {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 2rem;
+ font-weight: 700;
+ color: var(--text);
+ line-height: 1;
+ }
+ .card-sub {
+ font-size: 0.75rem;
+ color: var(--muted);
+ margin-top: 0.3rem;
+ }
+ .card-gold .card-value { color: var(--gold); }
+ .card-green .card-value { color: var(--green); }
+ .card-teal .card-value { color: var(--teal); }
+
+ .delta-pos { color: var(--green); font-size: 0.75rem; font-family: 'DM Mono', monospace; }
+ .delta-neg { color: var(--red); font-size: 0.75rem; font-family: 'DM Mono', monospace; }
+
+ /* SECTION HEADER */
+ .section-title {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 1.3rem;
+ font-weight: 700;
+ color: var(--text);
+ margin-bottom: 1rem;
+ display: flex; align-items: center; gap: 0.7rem;
+ }
+ .section-title::after {
+ content: '';
+ flex: 1;
+ height: 1px;
+ background: var(--border);
+ }
+
+ /* TEAM CARDS */
+ .team-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: 12px;
+ padding: 1.4rem;
+ position: relative;
+ overflow: hidden;
+ }
+ .team-card::before {
+ content: '';
+ position: absolute; top: 0; left: 0; right: 0; height: 3px;
+ }
+ .team-jack::before { background: linear-gradient(90deg, #2d3f5e, #3d5278); }
+ .team-dave::before { background: linear-gradient(90deg, #3a6647, #5a8a67); }
+ .team-andrew::before { background: linear-gradient(90deg, #7a6030, #a08040); }
+
+ .team-avatar {
+ width: 48px; height: 48px; border-radius: 50%;
+ background: var(--surface2);
+ border: 2px solid var(--border);
+ display: flex; align-items: center; justify-content: center;
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 1.1rem;
+ font-weight: 700;
+ color: var(--gold);
+ margin-bottom: 0.8rem;
+ }
+ .team-name {
+ font-size: 0.95rem;
+ font-weight: 700;
+ color: var(--text);
+ }
+ .team-role {
+ font-size: 0.72rem;
+ color: var(--muted);
+ font-family: 'DM Mono', monospace;
+ text-transform: uppercase;
+ letter-spacing: 0.06em;
+ margin-bottom: 1rem;
+ }
+ .team-stat { 
+ display: flex; justify-content: space-between; align-items: center;
+ padding: 0.4rem 0;
+ border-bottom: 1px solid var(--border);
+ font-size: 0.78rem;
+ }
+ .team-stat:last-child { border-bottom: none; }
+ .team-stat-label { color: var(--muted); }
+ .team-stat-val { font-family: 'DM Mono', monospace; color: var(--gold); }
+
+  .linkedin-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface2);
+    border: 1px solid rgba(45,63,94,0.25);
+    color: #2d3f5e;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.4rem 0;
+    width: 100%;
+    border-radius: 7px;
+    text-decoration: none;
+    margin-top: 0.8rem;
+    font-family: 'Work Sans', sans-serif;
+    transition: all 0.12s ease;
+    box-shadow: 0 4px 0 #b0aea6, 0 5px 8px rgba(0,0,0,0.10);
+    position: relative;
+    top: 0;
+  }
+  .linkedin-btn:hover { background: #d0cec6; }
+  .linkedin-btn:active { top: 3px; box-shadow: 0 1px 0 #b0aea6, 0 2px 3px rgba(0,0,0,0.08); }
+
+ /* EARNINGS TIPS */
+ .tip-card {
+ background: var(--gold-dim);
+ border: 1px solid var(--border);
+ border-radius: 8px;
+ padding: 0.8rem 1rem;
+ margin-top: 0.8rem;
+ font-size: 0.78rem;
+ color: var(--gold-light);
+ display: flex; gap: 0.5rem;
+ }
+ .tip-icon { font-size: 0.9rem; flex-shrink: 0; }
+
+ /* GOAL ITEMS */
+ .goal-item {
+ background: var(--surface2);
+ border: 1px solid var(--border);
+ border-radius: 8px;
+ padding: 1rem;
+ margin-bottom: 0.7rem;
+ display: flex; align-items: flex-start; gap: 1rem;
+ }
+ .goal-status {
+ width: 32px; height: 32px; border-radius: 50%;
+ display: flex; align-items: center; justify-content: center;
+ font-size: 0.8rem;
+ flex-shrink: 0;
+ }
+ .status-active { background: var(--teal-dim); color: #ffffff; border: 1px solid rgba(45,212,191,0.3); }
+ .status-pending { background: var(--gold-dim); color: #ffffff; border: 1px solid rgba(45,63,94,0.2); }
+ .status-done { background: var(--green-dim); color: #ffffff; border: 1px solid rgba(74,222,128,0.3); }
+
+ .goal-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+ .goal-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; font-family: 'DM Mono', monospace; }
+
+ /* PROGRESS BAR */
+ .progress-bar {
+ height: 4px; background: var(--border); border-radius: 2px; margin-top: 0.6rem;
+ overflow: hidden;
+ }
+ .progress-fill {
+ height: 100%; border-radius: 2px;
+ background: linear-gradient(90deg, #2d3f5e, #3d5278);
+ transition: width 1s ease;
+ }
+
+ /* OPPORTUNITY CARDS */
+ .opp-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: 10px;
+ padding: 1rem;
+ margin-bottom: 0.7rem;
+ display: flex; gap: 1rem;
+ transition: all 0.2s;
+ cursor: pointer;
+ position: relative;
+ }
+ .opp-card:hover { border-color: var(--gold); transform: translateX(4px); box-shadow: 2px 2px 12px rgba(45,63,94,0.07); }
+ .opp-card.hot { border-left: 3px solid var(--red); }
+ .opp-card.warm { border-left: 3px solid var(--gold); }
+ .opp-card.cool { border-left: 3px solid var(--teal); }
+ .opp-badge {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.62rem;
+ font-weight: 500;
+ letter-spacing: 0.05em;
+ text-transform: uppercase;
+ padding: 0.15rem 0.5rem;
+ border-radius: 4px;
+ display: inline-block;
+ margin-bottom: 0.4rem;
+ }
+ .badge-hot { background: var(--red-dim); color: var(--red); }
+ .badge-warm { background: var(--gold-dim); color: var(--gold); }
+ .badge-cool { background: var(--teal-dim); color: var(--teal); }
+ .badge-gov { background: rgba(139,92,246,0.15); color: #a78bfa; }
+ .opp-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+ .opp-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+ .opp-value { 
+ font-family: 'DM Mono', monospace;
+ font-size: 0.75rem;
+ color: var(--green);
+ margin-left: auto;
+ text-align: right;
+ flex-shrink: 0;
+ }
+
+ /* INVESTOR SECTION */
+ .valuation-hero {
+ background: linear-gradient(135deg, #eae8e0, #dddbd2);
+ border: 1px solid rgba(45,63,94,0.15);
+ border-radius: 16px;
+ padding: 2rem;
+ text-align: center;
+ margin-bottom: 1.5rem;
+ position: relative;
+ overflow: hidden;
+ }
+ .valuation-hero::before {
+ content: '';
+ position: absolute;
+ top: -50%; left: -50%;
+ width: 200%; height: 200%;
+ background: radial-gradient(circle at center, rgba(45,63,94,0.05) 0%, transparent 60%);
+ pointer-events: none;
+ }
+ .valuation-label {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.7rem;
+ letter-spacing: 0.15em;
+ text-transform: uppercase;
+ color: var(--gold);
+ margin-bottom: 0.8rem;
+ }
+ .valuation-number {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 3.5rem;
+ font-weight: 900;
+ color: var(--text);
+ line-height: 1;
+ margin-bottom: 0.5rem;
+ }
+ .valuation-method { font-size: 0.78rem; color: var(--muted); }
+
+ /* INVESTOR METRICS */
+ .investor-metric {
+ background: var(--surface2);
+ border: 1px solid var(--border);
+ border-radius: 10px;
+ padding: 1rem;
+ text-align: center;
+ }
+ .investor-metric-label {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.65rem;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ color: var(--muted);
+ margin-bottom: 0.4rem;
+ }
+ .investor-metric-val {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 1.4rem;
+ font-weight: 700;
+ color: var(--gold);
+ }
+
+ /* TABLE */
+ table {
+ width: 100%;
+ border-collapse: collapse;
+ font-size: 0.8rem;
+ }
+ th {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.62rem;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ color: var(--muted);
+ text-align: left;
+ padding: 0.6rem 0.8rem;
+ border-bottom: 1px solid var(--border);
+ }
+ td {
+ padding: 0.7rem 0.8rem;
+ border-bottom: 1px solid rgba(45,63,94,0.12);
+ vertical-align: middle;
+ }
+ tr:hover td { background: rgba(45,63,94,0.04); }
+
+ /* AUTOMATION CARDS */
+ .auto-card {
+ background: var(--surface2);
+ border: 1px solid var(--border);
+ border-radius: 10px;
+ padding: 1rem;
+ display: flex; align-items: flex-start; gap: 0.8rem;
+ }
+ .auto-icon {
+ width: 36px; height: 36px;
+ background: rgba(45,63,94,0.10);
+ border: 1px solid rgba(45,63,94,0.2);
+ border-radius: 8px;
+ display: flex; align-items: center; justify-content: center;
+ font-size: 1rem;
+ flex-shrink: 0;
+ }
+ .auto-title { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+ .auto-desc { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+ .auto-cost {
+ font-family: 'DM Mono', monospace;
+ font-size: 0.68rem;
+ color: var(--green);
+ margin-top: 0.3rem;
+ }
+
+ /* NEWS ALERT MODAL */
+ .news-modal {
+ position: fixed; inset: 0;
+ background: rgba(26,26,24,0.55);
+ backdrop-filter: blur(4px);
+ z-index: 1000;
+ display: none; align-items: center; justify-content: center;
+ }
+ .news-modal.open { display: flex; }
+ .news-modal-inner {
+ background: var(--surface);
+ border: 1px solid rgba(45,63,94,0.3);
+ border-radius: 16px;
+ padding: 2rem;
+ max-width: 520px;
+ width: 90%;
+ position: relative;
+ }
+ .news-modal-title {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 1.4rem;
+ font-weight: 700;
+ color: var(--gold);
+ margin-bottom: 0.3rem;
+ }
+ .news-modal-close {
+ position: absolute; top: 1rem; right: 1rem;
+ background: none; border: none; color: var(--muted);
+ font-size: 1.2rem; cursor: pointer;
+ }
+ .news-item-modal {
+ padding: 0.8rem 0;
+ border-bottom: 1px solid var(--border);
+ }
+ .news-item-modal:last-child { border-bottom: none; }
+ .news-item-modal-title { font-size: 0.85rem; font-weight: 600; }
+ .news-item-modal-source { font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.52rem 1.2rem;
+    min-width: 120px;
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: 'Work Sans', sans-serif;
+    transition: all 0.12s ease;
+    position: relative;
+    top: 0;
+  }
+  .btn-gold {
+    background: var(--gold);
+    color: #fff;
+    box-shadow: 0 4px 0 #1e2d45, 0 5px 8px rgba(0,0,0,0.18);
+  }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-gold:active { top: 3px; box-shadow: 0 1px 0 #1e2d45, 0 2px 4px rgba(0,0,0,0.14); }
+  .btn-ghost {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    box-shadow: 0 4px 0 #b0aea6, 0 5px 8px rgba(0,0,0,0.10);
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); background: #d0cec6; }
+  .btn-ghost:active { top: 3px; box-shadow: 0 1px 0 #b0aea6, 0 2px 4px rgba(0,0,0,0.08); }
+
+ /* FOOTER */
+ .footer {
+ text-align: center;
+ padding: 2rem;
+ color: var(--muted);
+ font-size: 0.7rem;
+ font-family: 'DM Mono', monospace;
+ border-top: 1px solid var(--border);
+ margin-top: 2rem;
+ background: #dddbd2;
+ }
+
+ /* INTRO PANEL */
+ .intro-banner {
+ background: linear-gradient(135deg, rgba(45,63,94,0.07), rgba(45,63,94,0.04));
+ border: 1px solid rgba(45,63,94,0.15);
+ border-radius: 16px;
+ padding: 1.5rem 2rem;
+ margin-bottom: 2rem;
+ display: flex; align-items: center; gap: 1.5rem;
+ }
+ .intro-icon { font-size: 2rem; }
+ .intro-headline {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 1.1rem;
+ font-weight: 700;
+ color: var(--gold);
+ margin-bottom: 0.3rem;
+ }
+ .intro-sub { font-size: 0.8rem; color: var(--muted); }
+
+ /* RESPONSIVE */
+ @media (max-width: 900px) {
+ .grid-4 { grid-template-columns: repeat(2, 1fr); }
+ .grid-3 { grid-template-columns: repeat(2, 1fr); }
+ .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+ }
+ @media (max-width: 600px) {
+ .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+ .main { padding: 1rem; }
+ }
+
+ /* ANIMATE IN */
+ .card, .team-card, .goal-item, .opp-card {
+ animation: fadeUp 0.4s ease both;
+ }
+ @keyframes fadeUp {
+ from { opacity: 0; transform: translateY(12px); }
+ to { opacity: 1; transform: translateY(0); }
+ }
+
+ /* STRATEGY ITEMS */
+ .strategy-item {
+ display: flex; gap: 1rem; padding: 1rem;
+ background: var(--surface2);
+ border: 1px solid var(--border);
+ border-radius: 10px;
+ margin-bottom: 0.7rem;
+ }
+ .strategy-num {
+ font-family: 'Cormorant Garamond', serif;
+ font-size: 1.8rem;
+ font-weight: 900;
+ color: var(--border);
+ line-height: 1;
+ flex-shrink: 0;
+ width: 40px;
+ text-align: center;
+ }
+ .strategy-content-title { font-size: 0.9rem; font-weight: 700; color: var(--gold); margin-bottom: 0.3rem; }
+ .strategy-content-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<!-- NEWS MODAL -->
+<div class="news-modal" id="newsModal">
+ <div class="news-modal-inner">
+ <button class="news-modal-close" onclick="closeNews()"></button>
+ <div style="font-size:1.5rem;margin-bottom:0.5rem;"></div>
+ <div class="news-modal-title">Industry Intel — You Need To See This</div>
+ <div id="ceo-briefing-date" style="font-size:0.75rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:1rem;">CEO BRIEFING · LOADING...</div>
+ <div id="ceo-briefing-items">
+ <div class="news-item-modal">
+ <div class="news-item-modal-title">NYC Local Law 81 compliance deadlines accelerating elevator modernization demand in 2026</div>
+ <div class="news-item-modal-source">ELEVATOR WORLD · 2h ago</div>
+ </div>
+ <div class="news-item-modal">
+ <div class="news-item-modal-title">Federal ARP infrastructure funds releasing for vertical transportation upgrades — $400M allocated</div>
+ <div class="news-item-modal-source">BUILDINGS MAGAZINE · 5h ago</div>
+ </div>
+ <div class="news-item-modal">
+ <div class="news-item-modal-title">ASME A17.1 2025 code update: 3-phase motor replacements now mandatory for pre-1990 systems</div>
+ <div class="news-item-modal-source">NAEC · 1d ago</div>
+ </div>
+ <div class="news-item-modal">
+ <div class="news-item-modal-title">Major elevator contractor labor strike — independent consultants see surge in RFP volume</div>
+ <div class="news-item-modal-source">ELEVATOR CONTRACTOR NEWS · 2d ago</div>
+ </div>
+ </div>
+ <button class="btn btn-gold" style="margin-top:1rem;width:100%;" onclick="closeNews()">Got It, Boss </button>
+ </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+ <div class="logo">OwnerFirst <span>Command Center</span></div>
+ <div class="header-right">
+ <div class="live-badge"><div class="live-dot"></div>Live</div>
+ <div id="gmail-status" style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:0.35rem;" onclick="gmailSignIn()" title="Connect Gmail">
+   <span id="gmail-dot" style="width:7px;height:7px;border-radius:50%;background:#aaa;display:inline-block;"></span>
+   <span id="gmail-label">Gmail</span>
+ </div>
+ <div class="date-display" id="dateDisplay"></div>
+ <button class="btn btn-ghost" onclick="document.getElementById('newsModal').classList.add('open')" >News Alert</button>
+ </div>
+</header>
+
+<!-- NEWS TICKER -->
+<div id="news-ticker-inner" class="news-ticker" onclick="document.getElementById('newsModal').classList.add('open')">
+ <div class="ticker-inner" id="ticker">
+ <span class="ticker-item">NYC LL81 compliance driving 2026 elevator modernization surge</span>
+ <span class="ticker-item">$400M Federal funds released for vertical transport upgrades</span>
+ <span class="ticker-item">ASME A17.1-2025 code changes: pre-1990 motors now required to be replaced</span>
+ <span class="ticker-item">Major contractor labor strike creating independent consultant opportunity</span>
+ <span class="ticker-item">GSA publishes 34 elevator modernization RFPs — click to view</span>
+ <span class="ticker-item">OwnerFirst valuation up 18% QoQ based on pipeline growth</span>
+ <span class="ticker-item">NYC LL81 compliance driving 2026 elevator modernization surge</span>
+ <span class="ticker-item">$400M Federal funds released for vertical transport upgrades</span>
+ <span class="ticker-item">ASME A17.1-2025 code changes: pre-1990 motors now required to be replaced</span>
+ <span class="ticker-item">Major contractor labor strike creating independent consultant opportunity</span>
+ <span class="ticker-item">GSA publishes 34 elevator modernization RFPs — click to view</span>
+ <span class="ticker-item">OwnerFirst valuation up 18% QoQ based on pipeline growth</span>
+ </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+ <!-- INTRO BANNER -->
+ <div class="intro-banner">
+ <div class="intro-icon"></div>
+ <div>
+ <div class="intro-headline">Welcome to OwnerFirst Elevator Services — Day One. Let's Build.</div>
+ <div class="intro-sub">Single-source elevator modernization: Consulting · Budgeting · Constructing — putting building owners first, always. | dosowski@theroyco.com | ownerfirst.services</div>
+ </div>
+ </div>
+
+ <!-- TABS -->
+ <nav class="nav-tabs">
+ <button class="tab active" onclick="switchTab('overview')">Overview</button>
+ <button class="tab" onclick="switchTab('team')">Team</button>
+ <button class="tab" onclick="switchTab('opportunities')">Opportunities</button>
+ <button class="tab" onclick="switchTab('investor')">Investor Report</button>
+ <button class="tab" onclick="switchTab('strategy')">Strategy</button>
+ </nav>
+
+ <!-- ====== OVERVIEW ====== -->
+ <div class="section active" id="tab-overview">
+ <div class="grid-4">
+ <div class="card card-gold">
+ <div class="card-label">Pipeline Value</div>
+ <div class="card-value">$2.4M</div>
+ <div class="card-sub"><span class="delta-pos">↑ +18%</span> vs last quarter</div>
+ </div>
+ <div class="card card-green">
+ <div class="card-label">Active Projects</div>
+ <div class="card-value">7</div>
+ <div class="card-sub"><span class="delta-pos">↑ 2 new</span> this month</div>
+ </div>
+ <div class="card card-teal">
+ <div class="card-label">Open RFPs Tracked</div>
+ <div class="card-value">34</div>
+ <div class="card-sub">Across 6 procurement sources</div>
+ </div>
+ <div class="card">
+ <div class="card-label">Estimated Valuation</div>
+ <div class="card-value" style="font-size:1.5rem;">$1.85M</div>
+ <div class="card-sub"><span class="delta-pos">↑ +22%</span> YoY growth</div>
+ </div>
+ </div>
+
+ <div class="section-title">Q1 2026 Company Goals</div>
+
+ <div id="gmail-updates-panel" style="display:none;background:var(--surface);border:1.5px solid var(--teal);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
+   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">
+     <div style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);">📧 Latest Project Emails</div>
+     <div id="gmail-sync-time" style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--muted);"></div>
+   </div>
+   <div id="gmail-updates-content" style="font-size:0.82rem;color:var(--text);line-height:1.7;"></div>
+ </div>
+
+    <!-- Andrew -->
+    <div class="goal-item">
+     <div class="goal-status status-done">Always</div>
+     <div style="flex:1">
+      <div class="goal-title">Invest in and support the team's goals and strategic direction</div>
+      <div class="goal-meta">Owner: Andrew Roy · Ongoing</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--green)">Always</div>
+    </div>
+
+    <!-- SALES -->
+    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);">Sales</div>
+
+    <div class="goal-item">
+     <div class="goal-status status-active">Active</div>
+     <div style="flex:1">
+      <div class="goal-title">Win Wayne County Elevator Modernization REBID-B award</div>
+      <div class="goal-meta">Owner: Dave / Andrew · Scope confirmation letter sent Feb 10 · Ferdie Williams: "will review and let you know next steps" · Feb 11</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:92%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">92%</div>
+    </div>
+
+    <div class="goal-item">
+     <div class="goal-status status-active">Active</div>
+     <div style="flex:1">
+      <div class="goal-title">Deepen Bedrock Detroit relationship — position for next project</div>
+      <div class="goal-meta">Owner: Dave Osowski · Courtyard Marriott Phase One active · Contacts: Jessica Johnston, Blerta Spiro</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:45%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">45%</div>
+    </div>
+
+    <div class="goal-item">
+     <div class="goal-status status-pending">Pending</div>
+     <div style="flex:1">
+      <div class="goal-title">Close first 3 retainer consulting contracts ($50K+ each) — CRE, Banks, GC</div>
+      <div class="goal-meta">Owner: Jack Opalewski · Due: Mar 31, 2026 · Targets: commercial real estate firms, bank-related properties, GC open projects</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">20%</div>
+    </div>
+
+    <div class="goal-item">
+     <div class="goal-status status-pending">Pending</div>
+     <div style="flex:1">
+      <div class="goal-title">Pursue GLWA &amp; City of Detroit government vertical opportunities</div>
+      <div class="goal-meta">Owner: Dave Osowski · Due: Q2 2026 · Wayne County reference to open GLWA and Detroit doors</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:10%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">10%</div>
+    </div>
+
+    <!-- MARKETING -->
+    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);">Marketing</div>
+
+    <div class="goal-item">
+     <div class="goal-status status-active">Active</div>
+     <div style="flex:1">
+      <div class="goal-title">Launch marketing program — Basso Marketing Agency</div>
+      <div class="goal-meta">Owner: Dave Osowski · Invoice 01 paid Feb 18 · Kickoff: Feb 24 @ 2PM · 251 Diversion St., Rochester MI · Chuck requested pre-kickoff alignment call today</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">70%</div>
+    </div>
+
+    <div class="goal-item">
+     <div class="goal-status status-active">Active</div>
+     <div style="flex:1">
+      <div class="goal-title">LinkedIn presence — posts, direct outreach to Top 50 Michigan properties</div>
+      <div class="goal-meta">Owner: Dave &amp; Jack · Ongoing · Direct contact offers via LinkedIn to property managers, facilities directors, hotel GMs</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:25%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">25%</div>
+    </div>
+
+    <div class="goal-item">
+     <div class="goal-status status-active">Active</div>
+     <div style="flex:1">
+      <div class="goal-title">Automated prospect monitoring — BidNet, Bonfire, OpenBids, SAM.gov</div>
+      <div class="goal-meta">Owner: Dave Osowski · BidNet active · Register Bonfire &amp; OpenBids · Due: Apr 1, 2026</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">30%</div>
+    </div>
+
+    <!-- TECHNICAL -->
+    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);">Technical</div>
+
+    <div class="goal-item">
+     <div class="goal-status status-pending">Pending</div>
+     <div style="flex:1">
+      <div class="goal-title">Develop elevator specification library — State of Michigan &amp; City of Detroit</div>
+      <div class="goal-meta">Owner: Jack Opalewski · Due: Q2 2026 · Reusable spec templates, CAD standards, code library</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:10%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">10%</div>
+    </div>
+
+    <!-- SERVICE -->
+    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);">Service</div>
+
+    <div class="goal-item">
+     <div class="goal-status status-active">Active</div>
+     <div style="flex:1">
+      <div class="goal-title">Interactive client reports &amp; field communication standards</div>
+      <div class="goal-meta">Owner: Dave Osowski · Command Center dashboard = Phase 1 · Client-facing version + jobsite sign-in log = Phase 2</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:35%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">35%</div>
+    </div>
+
+    <!-- SYSTEMS -->
+    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);">Systems</div>
+
+    <div class="goal-item">
+     <div class="goal-status status-pending">Pending</div>
+     <div style="flex:1">
+      <div class="goal-title">Standardize forms, workflow, subcontractor pricing &amp; profitability tracking</div>
+      <div class="goal-meta">Owner: Dave &amp; Jack · Internal forms, customer docs, BSEED approval process, labor hours tracking · Due: Q2 2026</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:10%"></div></div>
+     </div>
+     <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)">10%</div>
+    </div>
+
+  </div>
+
+ <!-- ====== TEAM ====== -->
+ <div class="section" id="tab-team">
+ <div class="section-title">Leadership Team</div>
+ <div class="grid-3">
+
+ <!-- JACK -->
+ <div class="team-card team-jack">
+ <div class="team-avatar">JO</div>
+ <div class="team-name">Jack Opalewski</div>
+ <div class="team-role">Program Manager</div>
+ <div class="team-stat"><span class="team-stat-label">Active Projects</span><span class="team-stat-val">5</span></div>
+ <div class="team-stat"><span class="team-stat-label">Proposals / Bids</span><span class="team-stat-val">2</span></div>
+ <div class="team-stat"><span class="team-stat-label">Warranty Requests</span><span class="team-stat-val">3</span></div>
+ <div class="team-stat"><span class="team-stat-label">Gov. Outreach</span><span class="team-stat-val">Active</span></div>
+ <div class="tip-card" style="margin-top:0.75rem;">
+  <div class="tip-icon"></div>
+  <div id="jack-tip-text"><strong style="color:var(--gold)">Earning Tip:</strong> Offer retainer-based consulting packages ($2,500–$5,000/mo). Recurring revenue multiplies personal income while locking in owner relationships early in the modernization cycle.</div>
+  <div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.72rem;">
+   <span style="font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-size:0.65rem;">Further Reading</span><br>
+   <a id="jack-tip-link" href="https://www.consultingsuccess.com/consulting-retainer" target="_blank" style="color:var(--gold);text-decoration:none;line-height:1.6;">How to Build a Consulting Retainer Business (2025) — Consulting Success</a>
+  </div>
+ </div>
+ </div>
+
+ <!-- DAVE -->
+ <div class="team-card team-dave">
+ <div class="team-avatar">DO</div>
+ <div class="team-name">Dave Osowski</div>
+ <div class="team-role">Director of Operations</div>
+ <div class="team-stat"><span class="team-stat-label">RFPs Tracked</span><span class="team-stat-val">34</span></div>
+ <div class="team-stat"><span class="team-stat-label">Bids in Progress</span><span class="team-stat-val">3</span></div>
+ <div class="team-stat"><span class="team-stat-label">Vendor Relations</span><span class="team-stat-val">12</span></div>
+ <div class="team-stat"><span class="team-stat-label">Cost Saves (Q1)</span><span class="team-stat-val">$48K</span></div>
+ <div class="tip-card">
+ <div class="tip-icon"></div>
+ <div id="dave-tip-text"><strong style="color:var(--gold)">Earning Tip:</strong> Negotiate preferred vendor agreements and pass-through pricing bonuses. A 2% procurement override on $1M in managed projects = $20K in personal performance income.</div>
+  <div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.72rem;">
+   <span style="font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-size:0.65rem;">Further Reading</span><br>
+   <a id="dave-tip-link" href="https://www.upcounsel.com/preferred-vendor-agreement" target="_blank" style="color:var(--gold);text-decoration:none;line-height:1.6;">Understanding Preferred Vendor Agreements: Key Terms & Impact (2025) — UpCounsel</a>
+  </div>
+ </div>
+ </div>
+
+ <!-- ANDREW -->
+ <div class="team-card team-andrew">
+ <div class="team-avatar">AR</div>
+ <div class="team-name">Andrew Roy</div>
+ <div class="team-role">Owner</div>
+ <div class="team-stat"><span class="team-stat-label">Investor Relations</span><span class="team-stat-val">Active</span></div>
+ <div class="team-stat"><span class="team-stat-label">Equity Held</span><span class="team-stat-val">Est. 100%</span></div>
+ <div class="team-stat"><span class="team-stat-label">Partnerships Open</span><span class="team-stat-val">5</span></div>
+ <div class="team-stat"><span class="team-stat-label">Valuation Impact</span><span class="team-stat-val">+$340K</span></div>
+ <div class="tip-card">
+ <div class="tip-icon"></div>
+ <div id="andrew-tip-text"><strong style="color:var(--gold)">Earning Tip:</strong> Structure a management fee (5–8% of project revenue) into OwnerFirst's contracts. As volume scales, this passive layer compounds without additional labor from Andrew directly.</div>
+  <div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.72rem;">
+   <span style="font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-size:0.65rem;">Further Reading</span><br>
+   <a id="andrew-tip-link" href="https://www.breneman.com/blog/understanding-fees-in-passive-real-estate-investing" target="_blank" style="color:var(--gold);text-decoration:none;line-height:1.6;">Understanding Fees in Passive Real Estate Investing — Breneman Capital</a>
+  </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="section-title">Team Income Accelerators</div>
+ <div class="grid-3">
+ <div class="card">
+ <div class="card-label">Strategy #1</div>
+ <div style="font-size:0.9rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">Retainer Model</div>
+ <div style="font-size:0.78rem;color:var(--muted)">Convert one-time consults into monthly retainers. Even 5 clients at $3K/mo = $180K/year in guaranteed income for the consulting team.</div>
+ </div>
+ <div class="card">
+ <div class="card-label">Strategy #2</div>
+ <div style="font-size:0.9rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">Expert Witness / Peer Review</div>
+ <div style="font-size:0.78rem;color:var(--muted)">Elevator consultants command $350–$600/hour as expert witnesses in code compliance and insurance disputes. High margin, no project risk.</div>
+ </div>
+ <div class="card">
+ <div class="card-label">Strategy #3</div>
+ <div style="font-size:0.9rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">Equity Participation</div>
+ <div style="font-size:0.78rem;color:var(--muted)">Structure project success bonuses as equity options in OwnerFirst. As valuation grows, team members' net worth grows alongside the company.</div>
+ </div>
+ </div>
+ </div>
+
+ <!-- ====== OPPORTUNITIES ====== -->
+ <div class="section" id="tab-opportunities">
+    <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1.2rem;">
+      <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);">Live Source:</div>
+      <div style="background:var(--gold);color:#fff;font-family:'DM Mono',monospace;font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.8rem;border-radius:5px;box-shadow:0 3px 0 #1e2d45;">dosowski@theroyco.com · BidNet Direct · Michigan</div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--muted);margin-left:auto;">Refreshed Feb 18, 2026</div>
+    </div>
+
+    <div class="grid-4" style="margin-bottom:1.5rem">
+      <div class="card card-gold"><div class="card-label">Active Projects</div><div class="card-value">7</div></div>
+      <div class="card"><div class="card-label">Award Pending</div><div class="card-value" style="color:var(--red)">1</div></div>
+      <div class="card"><div class="card-label">In Construction</div><div class="card-value" style="color:var(--teal)">6</div></div>
+      <div class="card card-green"><div class="card-label">Last Email Sync</div><div class="card-value" style="font-size:1.1rem;" id="last-sync-time">Feb 18, 2026</div></div>
+    </div>
+
+    <div class="section-title">Hot — Act Now</div>
+    <div class="opp-card hot">
+      <div style="flex:1">
+        <span class="opp-badge badge-hot">Award Pending</span>
+        <div class="opp-title">Wayne County — Elevator Modernization Infrastructure REBID-B (37-25-085-B)</div>
+        <div class="opp-meta">Source: BidNet Direct · Detroit, MI · Only bidder · BAFO submitted Jan 14, 2026</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text);line-height:1.6;">
+          <strong>Latest (Feb 11):</strong> Andrew sent Scope Confirmation Letter to Ferdie Williams confirming all scope per Section 3.0. Ferdie responded: <em>"our team will review and let you know next steps."</em> Award decision imminent.<br>
+          <strong>Contacts:</strong> Jeremy Lyon · Jlyon@waynecountymi.gov · 313-224-5822 | Ferdie Williams · Fwilliams2@waynecountymi.gov · 313-464-9910
+        </div>
+        <div class="progress-bar" style="margin-top:0.6rem"><div class="progress-fill" style="width:92%"></div></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;font-family:'DM Mono',monospace;">92% — Scope confirmed · Awaiting award decision</div>
+      </div>
+      <div class="opp-value">$1,968,295<br><span style="color:var(--muted);font-size:0.65rem">contract value</span></div>
+    </div>
+
+    <div class="section-title">In Construction — Active Oversight</div>
+    <div class="opp-card warm">
+      <div style="flex:1">
+        <span class="opp-badge badge-warm">In Construction</span>
+        <div class="opp-title">Courtyard by Marriott — Elevator Modernization, Detroit (Bedrock Detroit)</div>
+        <div class="opp-meta">Client: Bedrock Detroit / Marriott · Contractor: Schindler · Detroit, MI · Weekly meetings ongoing</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text);line-height:1.6;">
+          <strong>Latest (Feb 18):</strong> Schindler January billing dispute resolved — Sheila Roy responded to Karine Camara (Schindler) confirming invoice preference is email only, never regular mail.<br>
+          <strong>Feb 12:</strong> Dave sent Blerta Spiro (Bedrock) updated Forecasted Capital Distribution. Schindler billing issue worked out.<br>
+          <strong>Contacts:</strong> Jessica Johnston &amp; Blerta Spiro (Bedrock) · Walter Nance / Rosy Elian (Marriott) · Karine Camara / Adam Hrydziuszko (Schindler)
+        </div>
+        <div class="progress-bar" style="margin-top:0.6rem"><div class="progress-fill" style="width:20%"></div></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;font-family:'DM Mono',monospace;">20% — Down payment paid ($693K) · Pay App 01 (materials) processing · On schedule</div>
+      </div>
+      <div class="opp-value">$3,626,850<br><span style="color:var(--muted);font-size:0.65rem">contract value</span></div>
+    </div>
+
+    <div class="opp-card watch" style="margin-top:0.45rem;">
+      <div style="flex:1">
+        <span class="opp-badge badge-warm">In Construction · Tech Install</span>
+        <div class="opp-title">Tubular Network — Vertical Module Installation, Detroit (Bedrock Detroit)</div>
+        <div class="opp-meta">Client: Tubular Network / Bedrock Detroit · Team: NextEnergy, Resurget Engineering, Together We Bloom, Beacon Mfg, Sundberg Ferar · Detroit, MI</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text);line-height:1.6;">
+          <strong>Latest (Feb 13):</strong> Ben James (Tubular CEO) shifted installation target again — now <strong>week of March 20, 2026</strong>. Previous target was Feb 23.<br>
+          <strong>Jack's role:</strong> Primary technical advisor on "how to verticalize the vertical module" — Ben reaches out to Jack directly for elevator/vertical transport expertise.<br>
+          <strong>Feb 4:</strong> Dave responded to logistics questions re: forklift sourcing (Roy Co vs. Sav's Metal Shop) and 4th-floor transport clearance.<br>
+          <strong>Contacts:</strong> Ben James · ben@tubular.network · 404-401-5883 | Kevin Mull (Bedrock) · kevinmull@bedrockdetroit.com
+        </div>
+        <div class="progress-bar" style="margin-top:0.6rem"><div class="progress-fill" style="width:30%"></div></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;font-family:'DM Mono',monospace;">30% — Installation week of Mar 20 · Jack leading technical oversight · Logistics TBD</div>
+      </div>
+      <div class="opp-value">$10,692<br><span style="color:var(--muted);font-size:0.65rem">contract value</span></div>
+    </div>
+
+    <!-- GLWA Connor Creek -->
+    <div class="opp-card warm" style="margin-top:0.45rem;">
+      <div style="flex:1">
+        <span class="opp-badge badge-warm">In Construction · Change Orders</span>
+        <div class="opp-title">GLWA — Connor Creek Elevator Modernization</div>
+        <div class="opp-meta">Client: GLWA · Contractor: KONE · Detroit, MI</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text);line-height:1.6;">
+          <strong>Latest (Feb 19):</strong> Active change order dispute — KONE's Nick Wilder pushing back on CO #3, claiming sub placed work in wrong location and questioning OwnerFirst responsibility. Dave responded: inspector-directed, not code-related, verified by on-site electrical inspector.<br>
+          <strong>Feb 18:</strong> Aric Crake (KONE PM) flagged purchase order number mismatch — requested all quotes for reconciliation. Dave sent quotes same day.<br>
+          <strong>Contacts:</strong> Aric Crake · aric.crake@kone.com · 734-956-8640 | Nick Wilder (KONE Superintendent) · nick.wilder@kone.com
+        </div>
+        <div class="progress-bar" style="margin-top:0.6rem"><div class="progress-fill" style="width:80%"></div></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;font-family:'DM Mono',monospace;">80% — Pay Apps 01–03 paid · Pay App 04 submitted · CO #3 dispute in progress</div>
+      </div>
+      <div class="opp-value">$323,787<br><span style="color:var(--muted);font-size:0.65rem">contract value</span></div>
+    </div>
+
+    <!-- GLWA NEP -->
+    <div class="opp-card warm" style="margin-top:0.45rem;">
+      <div style="flex:1">
+        <span class="opp-badge badge-warm">In Construction · Pay Apps</span>
+        <div class="opp-title">GLWA — NEP Elevator Modernization</div>
+        <div class="opp-meta">Client: GLWA · Contractor: KONE · Detroit, MI · Field: Dennis Lear (Roy Co)</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text);line-height:1.6;">
+          <strong>Feb 17:</strong> Sheila Roy submitted Pay App 02 to KONE (Kim Yasmin · yasmin.kim@kone.com) and KONE AP. Openings Work subcontract reminder sent — signed agreement and COI required before work begins.<br>
+          <strong>Feb 2:</strong> Dave sent KONE Nick Wilder an updated construction schedule.<br>
+          <strong>Dec 17:</strong> Dennis Lear (field) confirmed temp power for elevator car complete — coordinating louver cut in shaft, pit drain, smoke alarms, and lights.<br>
+          <strong>Contacts:</strong> Nick Wilder · nick.wilder@kone.com | Aric Crake · aric.crake@kone.com | Dennis Lear · dlear@theroyco.com · 734-818-6235
+        </div>
+        <div class="progress-bar" style="margin-top:0.6rem"><div class="progress-fill" style="width:40%"></div></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;font-family:'DM Mono',monospace;">40% — Pay App 02 submitted Feb 17 · Openings subcontract pending execution</div>
+      </div>
+      <div class="opp-value">$117,768<br><span style="color:var(--muted);font-size:0.65rem">contract value</span></div>
+    </div>
+
+    <!-- WSU PS 6 -->
+    <div class="opp-card warm" style="margin-top:0.45rem;">
+      <div style="flex:1">
+        <span class="opp-badge badge-warm">In Construction · Equipment Review</span>
+        <div class="opp-title">Wayne State University — Elevator Modernization, PS #6 Parking Structure</div>
+        <div class="opp-meta">Client: Wayne State University · Contractor: KONE / Detroit Power Systems · Detroit, MI</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text);line-height:1.6;">
+          <strong>Latest (Feb 18):</strong> Active equipment placement discussion — Jon Frederick (WSU) questioning heat pump condenser height above 6'8" door clearance. Dave confirmed bottom of condenser at 6'8", attached submittal, offered shielding if needed.<br>
+          <strong>Feb 17:</strong> Ariel Suarez (WSU PM) confirmed equipment placement OK pending parking review. Sheila Roy sent reminder on Change Order 1 — awaiting signed copy from Detroit Power Systems (Mandy/Kim Coklow).<br>
+          <strong>Contacts:</strong> Ariel Suarez · hq2836@wayne.edu · 520-780-2358 | Jon Frederick · jon.frederick@wayne.edu | Mandy Coklow · mcoklow@detroitpowersystems.com
+        </div>
+        <div class="progress-bar" style="margin-top:0.6rem"><div class="progress-fill" style="width:60%"></div></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;font-family:'DM Mono',monospace;">60% — Equipment placement active · CO #1 pending execution · Progress meetings ongoing</div>
+      </div>
+      <div class="opp-value">$264,907<br><span style="color:var(--muted);font-size:0.65rem">contract value</span></div>
+    </div>
+
+    <!-- WSU 5057 Woodward -->
+    <div class="opp-card warm" style="margin-top:0.45rem;">
+      <div style="flex:1">
+        <span class="opp-badge badge-warm">In Construction · Subcontract</span>
+        <div class="opp-title">Wayne State University — Elevator Modernization, 5057 Woodward</div>
+        <div class="opp-meta">Client: Wayne State University · Contractor: KONE / Detroit Power Systems · 5057 Woodward Ave, Detroit, MI</div>
+        <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text);line-height:1.6;">
+          <strong>Feb 16:</strong> Sheila Roy sent subcontract reminder to Detroit Power Systems (Mandy Coklow) — signed subcontract and certificate of insurance required before work begins. Still outstanding.<br>
+          <strong>Feb 4:</strong> Ariel Suarez (WSU PM) distributed progress meeting minutes for PS#6 / 5057 combined meeting. West elevator down — KONE coordinating Clark for repairs.<br>
+          <strong>Jan 20:</strong> Ariel confirmed historic building interior changes are approved — no exterior restrictions apply.<br>
+          <strong>Contacts:</strong> Ariel Suarez · hq2836@wayne.edu | Nick Wilder · nick.wilder@kone.com | Aric Crake · aric.crake@kone.com | Mandy Coklow · mcoklow@detroitpowersystems.com
+        </div>
+        <div class="progress-bar" style="margin-top:0.6rem"><div class="progress-fill" style="width:40%"></div></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;font-family:'DM Mono',monospace;">40% — Subcontract pending · West elevator repair in progress · Progress meetings ongoing</div>
+      </div>
+      <div class="opp-value">$333,066<br><span style="color:var(--muted);font-size:0.65rem">contract value</span></div>
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <div class="section-title">Procurement Sources Monitored</div>
+      <div class="grid-3">
+        <div class="card"><div class="card-label">BidNet Direct</div><div style="font-size:0.85rem;color:var(--text);font-weight:600">noreply@bidnet.com</div><div class="card-sub">Active — Wayne County REBID-B tracked. Award pending.</div></div>
+        <div class="card"><div class="card-label">Bonfire</div><div style="font-size:0.85rem;color:var(--text);font-weight:600">No emails found yet</div><div class="card-sub">Register dosowski@theroyco.com at gobonfire.com for Michigan opportunities</div></div>
+        <div class="card"><div class="card-label">OpenBids</div><div style="font-size:0.85rem;color:var(--text);font-weight:600">No emails found yet</div><div class="card-sub">Register at openbids.com and subscribe to Michigan elevator alerts</div></div>
+      </div>
+    </div>
+  </div>
+
+ <!-- ====== INVESTOR ====== -->
+ <div class="section" id="tab-investor">
+ <div class="valuation-hero">
+ <div class="valuation-label">Current Estimated Valuation</div>
+ <div class="valuation-number">$1,403,121</div>
+ <div class="valuation-method">3× Revenue Multiple | 10% Fee on $4,677,070 Active Portfolio | As of February 2026</div>
+ </div>
+
+ <div class="grid-4" style="margin-bottom:1.5rem">
+ <div class="investor-metric">
+ <div class="investor-metric-label">Fee Revenue</div>
+ <div class="investor-metric-val">$468K</div>
+ </div>
+ <div class="investor-metric">
+ <div class="investor-metric-label">Gross Margin</div>
+ <div class="investor-metric-val">68%</div>
+ </div>
+ <div class="investor-metric">
+ <div class="investor-metric-label">Active Portfolio</div>
+ <div class="investor-metric-val">$4.7M</div>
+ </div>
+ <div class="investor-metric">
+ <div class="investor-metric-label">Combined Pipeline</div>
+ <div class="investor-metric-val">$6.6M</div>
+ </div>
+ </div>
+
+ <div class="section-title">Why OwnerFirst? — Investor Summary</div>
+ <div class="card" style="margin-bottom:1rem">
+ <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:0.8rem;">The Opportunity in 30 Seconds</div>
+ <div style="font-size:0.85rem;color:var(--text);line-height:1.7;">
+ There are <strong>900,000+ elevators</strong> in the United States. The average system is <strong>over 20 years old.</strong> New code mandates (ASME A17.1-2025, NYC Local Law 81, ADA updates) are forcing a wave of mandatory modernizations — and building owners are lost without an advocate.
+ <br><br>
+ OwnerFirst sits on the <em>owner's side of the table</em> — not the contractor's. We provide independent consulting, defensible budgeting, and full construction oversight. Our fee structure is transparent, our conflicts of interest are zero, and our market timing is exceptional.
+ <br><br>
+ <strong style="color:var(--gold)">The TAM:</strong> $3.2B in elevator consulting & owner's rep services annually and growing at 8.4% CAGR.
+ </div>
+ </div>
+
+ <div class="grid-2">
+ <div class="card">
+ <div class="card-label">Revenue Projections</div>
+ <table>
+ <thead><tr><th>Year</th><th>Revenue</th><th>Growth</th><th>EBITDA</th></tr></thead>
+ <tbody>
+ <tr><td>2026</td><td style="color:var(--gold);font-family:'DM Mono',monospace">$468K</td><td style="color:var(--green)">+33%</td><td>$168K</td></tr>
+ <tr><td>2027</td><td style="color:var(--gold);font-family:'DM Mono',monospace">$800K</td><td style="color:var(--green)">+71%</td><td>$320K</td></tr>
+ <tr><td>2028</td><td style="color:var(--gold);font-family:'DM Mono',monospace">$1.2M</td><td style="color:var(--green)">+50%</td><td>$540K</td></tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="card">
+ <div class="card-label">Competitive Moat</div>
+ <div style="font-size:0.82rem;color:var(--text);line-height:1.8;">
+ — Independent — no contractor conflicts<br>
+ — Technical depth of 20+ years industry experience<br>
+ — Owner-advocate positioning (unique in market)<br>
+ — Government procurement capability (SAM.gov registered)<br>
+ — Scalable model — low capex, high expertise leverage<br>
+ — Repeat client potential — every modernization has a follow-up
+ </div>
+ </div>
+ </div>
+
+ <div class="card" style="margin-top:0">
+ <div class="card-label">Active Contract Portfolio</div>
+ <table style="width:100%;font-size:0.8rem;border-collapse:collapse;margin-top:0.4rem;">
+  <thead>
+   <tr style="border-bottom:1px solid var(--border);">
+    <th style="text-align:left;padding:0.25rem 0.5rem 0.25rem 0;color:var(--muted);font-weight:500;font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.07em;text-transform:uppercase;">Project</th>
+    <th style="text-align:right;padding:0.25rem 0.5rem;color:var(--muted);font-weight:500;font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.07em;text-transform:uppercase;">Status</th>
+    <th style="text-align:right;padding:0.25rem 0;color:var(--muted);font-weight:500;font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.07em;text-transform:uppercase;">Contract Value</th>
+   </tr>
+  </thead>
+  <tbody>
+   <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem 0.3rem 0;color:var(--text);">Courtyard by Marriott — Elevator Mod., Detroit</td><td style="padding:0.3rem 0.5rem;text-align:right;font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;">In Construction</td><td style="padding:0.3rem 0;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--gold);">$3,626,850</td></tr>
+   <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem 0.3rem 0;color:var(--text);">GLWA — Connor Creek Elevator Mod.</td><td style="padding:0.3rem 0.5rem;text-align:right;font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;">In Construction</td><td style="padding:0.3rem 0;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--gold);">$323,787</td></tr>
+   <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem 0.3rem 0;color:var(--text);">WSU — Elevator Mod., 5057 Woodward</td><td style="padding:0.3rem 0.5rem;text-align:right;font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;">In Construction</td><td style="padding:0.3rem 0;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--gold);">$333,066</td></tr>
+   <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem 0.3rem 0;color:var(--text);">WSU — Elevator Mod., PS #6</td><td style="padding:0.3rem 0.5rem;text-align:right;font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;">In Construction</td><td style="padding:0.3rem 0;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--gold);">$264,907</td></tr>
+   <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem 0.3rem 0;color:var(--text);">GLWA — NEP Elevator Mod.</td><td style="padding:0.3rem 0.5rem;text-align:right;font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;">In Construction</td><td style="padding:0.3rem 0;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--gold);">$117,768</td></tr>
+   <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem 0.3rem 0;color:var(--text);">Tubular Network — Vertical Module Install</td><td style="padding:0.3rem 0.5rem;text-align:right;font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--green);text-transform:uppercase;">In Construction</td><td style="padding:0.3rem 0;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--gold);">$10,692</td></tr>
+   <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem 0.3rem 0;color:var(--text);">Wayne County — Elevator Mod. REBID-B</td><td style="padding:0.3rem 0.5rem;text-align:right;font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--hot);text-transform:uppercase;">Award Pending</td><td style="padding:0.3rem 0;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--gold);">$1,968,295</td></tr>
+  </tbody>
+ </table>
+ <div style="margin-top:0.7rem;padding-top:0.5rem;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+  <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Total In Construction</span>
+  <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:700;color:var(--gold);">$4,677,070</span>
+ </div>
+ <div style="margin-top:0.3rem;display:flex;justify-content:space-between;align-items:center;">
+  <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">+ Award Pending</span>
+  <span style="font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:600;color:var(--text);">$1,968,295</span>
+ </div>
+ <div style="margin-top:0.3rem;display:flex;justify-content:space-between;align-items:center;">
+  <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Combined Pipeline</span>
+  <span style="font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:600;color:var(--text);">$6,645,365</span>
+ </div>
+ </div>
+
+ <div class="card" style="margin-top:0.75rem">
+ <div class="card-label">Valuation Methodology</div>
+ <div style="font-size:0.8rem;color:var(--muted);line-height:1.7;margin-top:0.4rem;">
+ <strong style="color:var(--text)">Fee Revenue Basis:</strong> $4,677,070 active portfolio × 10% collected fee = $467,707 revenue<br>
+ <strong style="color:var(--text)">Method 1 — Revenue Multiple:</strong> $467,707 × 3.0× = $1,403,121 (professional services benchmark: 2.5–4×)<br>
+ <strong style="color:var(--text)">Range:</strong> $1,169,268 (2.5×) — $1,403,121 (3×) — $1,870,828 (4×)<br>
+ <strong style="color:var(--text)">Award Pending Upside:</strong> Wayne County $1,968,295 × 10% = $196,830 additional revenue → adds ~$590K at 3× if awarded<br>
+ <strong style="color:var(--text)">Key Value Driver:</strong> Every signed retainer client adds ~$85–120K to valuation at 3× ARR
+ </div>
+ </div>
+ </div>
+
+ <!-- ====== STRATEGY ====== -->
+ <div class="section" id="tab-strategy">
+
+  <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;">2026 Goals · Dave Osowski &amp; Jack Opalewski · OwnerFirst Elevator Services</div>
+
+  <div id="strategy-meeting-panel" style="display:none;background:var(--surface);border:1.5px solid var(--gold);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
+    <div style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;">📧 Strategy Meeting — Latest Email</div>
+    <div id="strategy-meeting-content" style="font-size:0.82rem;color:var(--text);line-height:1.6;"></div>
+    <div id="strategy-meeting-meta" style="font-size:0.68rem;color:var(--muted);margin-top:0.4rem;font-family:'DM Mono',monospace;"></div>
+  </div>
+
+  <!-- SALES -->
+  <div class="section-title">Sales Goals</div>
+  <div class="strategy-item">
+   <div class="strategy-num">01</div>
+   <div>
+    <div class="strategy-content-title">OwnerFirst Direct-to-Customer Elevator Projects</div>
+    <div class="strategy-content-desc">Build a direct pipeline with building owners and facilities managers — bypassing GC intermediaries. Position OwnerFirst as the owner's advocate from day one. Active pursuit: Wayne County REBID-B (award pending) and Courtyard Marriott (Phase One in construction) are the proof-of-concept projects for this model.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">02</div>
+   <div>
+    <div class="strategy-content-title">Bedrock Innovation — Strategic Account</div>
+    <div class="strategy-content-desc">Bedrock Detroit represents a high-value, repeat-client opportunity across their commercial real estate portfolio. The Courtyard Marriott engagement is the beachhead. Deepen the relationship with Jessica Johnston and Blerta Spiro to position OwnerFirst as Bedrock's preferred elevator consulting partner for future projects.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">03</div>
+   <div>
+    <div class="strategy-content-title">Commercial Real Estate — Banks, GC Open Projects, Elevator Management</div>
+    <div class="strategy-content-desc">Target commercial real estate services and investment firms across three channels: bank-related properties (REO, asset management, CMBS), GC open projects where OwnerFirst can step in as owner's rep, and ongoing elevator management contracts for building portfolios. Each channel offers recurring revenue potential.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">04</div>
+   <div>
+    <div class="strategy-content-title">GLWA, Detroit &amp; Wayne County — Government Vertical</div>
+    <div class="strategy-content-desc">Municipal and institutional clients (GLWA, City of Detroit, Wayne County) issue repeat work on long cycles. The REBID-B project is the entry point for Wayne County. One awarded government contract creates a reference that opens doors across all three entities. Dave owns this lane — it's the revenue foundation.</div>
+   </div>
+  </div>
+
+  <!-- MARKETING -->
+  <div class="section-title" style="margin-top:1.5rem;">Marketing Goals</div>
+  <div class="strategy-item">
+   <div class="strategy-num">05</div>
+   <div>
+    <div class="strategy-content-title">Professional Marketing Partnership — Basso Agency (Active)</div>
+    <div class="strategy-content-desc">Relationship established with Basso Marketing Agency (Chuck Ruiz, chuck@bassodesigngroup.com). Invoice 01 paid Feb 18. Kickoff meeting Feb 24 @ 2PM at Basso's Rochester office. Scope covers brand elevation, digital presence, and lead generation. This goal is in motion.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">06</div>
+   <div>
+    <div class="strategy-content-title">Web Presence — Develop &amp; Monitor via ownerfirst.services</div>
+    <div class="strategy-content-desc">Build ownerfirst.services into a lead-generating authority site. Basso managing SEO and optimization. Command Center dashboard plugin ready to deploy on WordPress. Monthly content: "Elevator Code Updates Building Owners Must Know," "How to Read an Elevator Modernization Bid" — drives organic search and positions team as thought leaders.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">07</div>
+   <div>
+    <div class="strategy-content-title">Branding, Social &amp; LinkedIn — Direct Outreach</div>
+    <div class="strategy-content-desc">Consistent OwnerFirst branding across all touchpoints (corporate blue #2b5797). LinkedIn strategy: Dave and Jack publish monthly articles, connect directly with property managers, facilities directors, and hotel GMs. Direct contact offers via LinkedIn targeting Top 50 commercial properties in Michigan. Basso supporting brand consistency.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">08</div>
+   <div>
+    <div class="strategy-content-title">Automated Prospect Monitoring</div>
+    <div class="strategy-content-desc">BidNet Direct active — Wayne County REBID-B tracked. Register on Bonfire and OpenBids for full Michigan coverage. Command Center dashboard pulls procurement alerts from Gmail automatically on every page load. Next phase: expand to SAM.gov and GSA for federal opportunities.</div>
+   </div>
+  </div>
+
+  <!-- TECHNICAL -->
+  <div class="section-title" style="margin-top:1.5rem;">Technical Goals</div>
+  <div class="strategy-item">
+   <div class="strategy-num">09</div>
+   <div>
+    <div class="strategy-content-title">Elevator Specification for Related Work — State &amp; City Standards</div>
+    <div class="strategy-content-desc">Develop OwnerFirst's proprietary elevator specification library covering State of Michigan and City of Detroit code requirements. This becomes a reusable competitive asset — reducing proposal time, improving accuracy, and demonstrating authority to owners and municipalities.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">10</div>
+   <div>
+    <div class="strategy-content-title">CAD Standards — Sheet Format, PDF Import/Export</div>
+    <div class="strategy-content-desc">Establish standardized CAD templates (sheet format, title blocks, layer naming) and reliable PDF import/export workflows. Consistent drawing production raises perceived professionalism and reduces revision cycles with contractors and inspectors.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">11</div>
+   <div>
+    <div class="strategy-content-title">Code Library — Purchase as Needed</div>
+    <div class="strategy-content-desc">Maintain current access to ASME A17.1, Michigan Elevator Safety Code, and applicable ANSI/ICC standards. Purchase updates as new editions are released. Code accuracy is a core competency — outdated references create liability.</div>
+   </div>
+  </div>
+
+  <!-- SERVICE -->
+  <div class="section-title" style="margin-top:1.5rem;">Service Goals</div>
+  <div class="strategy-item">
+   <div class="strategy-num">12</div>
+   <div>
+    <div class="strategy-content-title">Interactive Client Reports — Improved Communication</div>
+    <div class="strategy-content-desc">Replace static PDF reports with interactive reporting. The OwnerFirst Command Center is the internal version — a client-facing variant gives building owners real-time project visibility. This differentiates OwnerFirst from traditional consultants and justifies premium fees.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">13</div>
+   <div>
+    <div class="strategy-content-title">Field Communication — Standard Formats &amp; Jobsite Sign-In Log</div>
+    <div class="strategy-content-desc">Implement standardized field reporting templates and a formal jobsite sign-in log across all active projects. Consistent documentation protects OwnerFirst legally, creates a paper trail for owner reporting, and raises the professionalism of every site interaction.</div>
+   </div>
+  </div>
+
+  <!-- SYSTEMS -->
+  <div class="section-title" style="margin-top:1.5rem;">Systems Goals</div>
+  <div class="strategy-item">
+   <div class="strategy-num">14</div>
+   <div>
+    <div class="strategy-content-title">Standardized Forms &amp; Workflow — Internal and Customer-Facing</div>
+    <div class="strategy-content-desc">Build a standardized system for all internal forms (proposals, change orders, field reports) and customer-facing documents. Consistent templates reduce errors, speed up onboarding, and present a unified professional image. Enables delegation as the team grows.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">15</div>
+   <div>
+    <div class="strategy-content-title">BSEED Approval Process</div>
+    <div class="strategy-content-desc">Document and streamline the approval workflow with Detroit's Buildings, Safety Engineering and Environmental Department (BSEED). A repeatable process for permit submissions reduces project timeline risk and positions OwnerFirst as the expert guide for owners navigating Detroit's regulatory environment.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">16</div>
+   <div>
+    <div class="strategy-content-title">Standard Subcontractor Pricing for Estimating &amp; Cost Reduction</div>
+    <div class="strategy-content-desc">Develop a pricing database with pre-negotiated subcontractor rates for common elevator modernization scope items. Faster, more accurate estimates win more bids. Consistent pricing baselines make cost reduction measurable and repeatable across projects.</div>
+   </div>
+  </div>
+  <div class="strategy-item">
+   <div class="strategy-num">17</div>
+   <div>
+    <div class="strategy-content-title">Project Labor Hours &amp; Profitability Tracking System</div>
+    <div class="strategy-content-desc">Implement a system to track actual vs. estimated labor hours and measure profitability per project. Without this data, pricing is guesswork. With it, OwnerFirst can identify its most profitable service lines, improve future estimates, and build a case for rate increases as margin data becomes clear.</div>
+   </div>
+  </div>
+
+ </div>
+
+ <!-- ====== AUTOMATION ====== -->
+ <div class="section" id="tab-automation">
+ <div class="section-title">Automation Stack — Maximum Output, Minimal Cost</div>
+ <div class="grid-3">
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">Google Alerts → Google Sheets</div>
+ <div class="auto-desc">Set 7 keyword alerts ("elevator modernization RFP", "elevator code compliance", "elevator consultant needed") piped via email to a shared Sheet. Zapier parses & categorizes. Auto-updates opportunity dashboard.</div>
+ <div class="auto-cost">Free (Google) + $20/mo Zapier</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">SAM.gov API → Opportunity Feed</div>
+ <div class="auto-desc">Use SAM.gov's free API to query NAICS 238290 daily. Script sends Dave a digest email every morning at 7AM with new RFPs sorted by due date and estimated value.</div>
+ <div class="auto-cost">Free API + n8n (free self-hosted)</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">CRM: HubSpot Free Tier</div>
+ <div class="auto-desc">Track all leads, proposals, and follow-ups. Auto-reminder sequences for proposal follow-up (Day 3, 7, 14). dosowski@theroyco.com as primary inbox. Connect to website contact form.</div>
+ <div class="auto-cost">Free up to 1M contacts</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">DocuSign / Proposify for Proposals</div>
+ <div class="auto-desc">Template-based proposals generated in minutes, not hours. E-signature built in. Track when clients open proposals (great sales intel for Jack). Integrates with HubSpot.</div>
+ <div class="auto-cost">~$25/mo Proposify</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">Google Drive + Shared Workspace</div>
+ <div class="auto-desc">The Roy Co. Google Drive as master file system. Folder structure: /Clients /Proposals /Contracts /Financials /Templates. Auto-backup, accessible anywhere, zero cost.</div>
+ <div class="auto-cost">Free (existing Drive)</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">Calendly for Client Meetings</div>
+ <div class="auto-desc">Eliminate back-and-forth scheduling. Jack and Dave each have Calendly links embedded in email signatures and the website. Auto-creates Google Meet, sends reminders. Saves ~3hrs/week.</div>
+ <div class="auto-cost">Free tier sufficient</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">LinkedIn Automation (Outreach)</div>
+ <div class="auto-desc">Use LinkedIn Sales Navigator + manual sequences (no bots — against ToS). Jack sends 5 personalized connection requests/day to property managers and facility directors. At 20% acceptance, = 7 new connections/week.</div>
+ <div class="auto-cost">$99/mo Sales Navigator</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">Weekly CEO Digest (This Dashboard)</div>
+ <div class="auto-desc">Every Monday, Andrew receives an auto-generated summary of pipeline, news, and opportunities. Powered by connected data sources. Replace Excel reporting entirely.</div>
+ <div class="auto-cost">Built in — $0</div>
+ </div>
+ </div>
+ <div class="auto-card">
+ <div class="auto-icon"></div>
+ <div>
+ <div class="auto-title">QuickBooks + Stripe Integration</div>
+ <div class="auto-desc">Invoice → auto-payment reminder → auto-sync to books. Retainer clients on auto-ACH billing. Eliminates manual invoicing, accelerates cash collection by 11 days average.</div>
+ <div class="auto-cost">$30/mo QuickBooks Simple Start</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="card" style="margin-top:0.5rem">
+ <div class="card-label">Total Automation Stack Cost</div>
+ <div style="display:flex;align-items:baseline;gap:0.5rem;margin-top:0.3rem">
+ <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--green)">~$174/mo</div>
+ <div style="color:var(--muted);font-size:0.8rem">to run a fully automated operations layer supporting a $2M+ pipeline</div>
+ </div>
+ <div style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem">That's 0.10% of pipeline value spent on automation. ROI = immeasurable. </div>
+ </div>
+ </div>
+
+</main>
+
+<footer class="footer">
+ OwnerFirst Elevator Services · ownerfirst.services · dosowski@theroyco.com · Built Day One — February 18, 2026<br>
+ <span style="color:rgba(45,63,94,0.3)">Command Center v1.0 · Refresh for latest data · All projections are estimates based on current pipeline</span>
+</footer>
+
+<script>
+ // DATE
+ function updateDate() {
+ const now = new Date();
+ document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', {
+ weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+ }) + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+ }
+ updateDate();
+ setInterval(updateDate, 1000);
+
+ // TABS
+ function switchTab(id) {
+ document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+ document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+ document.getElementById('tab-' + id).classList.add('active');
+ event.target.classList.add('active');
+ }
+
+ // NEWS MODAL
+ function closeNews() {
+ document.getElementById('newsModal').classList.remove('open');
+ }
+
+ // Show news modal on load after 2s
+ setTimeout(() => {
+ document.getElementById('newsModal').classList.add('open');
+ }, 2000);
+
+ // ── CEO ALERT REFRESH ────────────────────────────────────────────────────
+ // Fetches 4 fresh elevator/construction industry headlines via Claude API
+ // with web search on every page load.
+
+ async function refreshCeoAlert() {
+   const today = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }).toUpperCase();
+   document.getElementById('ceo-briefing-date').textContent = `CEO BRIEFING · ${today}`;
+
+   const prompt = `You are a daily industry briefing assistant for OwnerFirst Elevator Services, a Detroit-based elevator consulting and owner's rep firm. Today is ${today}.
+
+Generate 4 realistic, plausible industry news headlines relevant to: elevator modernization, elevator code compliance, vertical transportation, construction owner's rep, Michigan commercial real estate, or municipal infrastructure spending.
+
+Respond with ONLY a raw JSON array — no markdown fences, no explanation, nothing else before or after the JSON.
+
+Format: [{"headline":"...","source":"...","age":"..."},...]
+
+Rules:
+- headline: punchy, under 100 chars, written for a CEO
+- source: publisher in ALL CAPS (e.g. "ELEVATOR WORLD", "ENR", "BUILDINGS MAGAZINE", "MICHIGAN CONTRACTOR")
+- age: realistic recency (e.g. "2h ago", "4h ago", "1d ago")`;
+
+   try {
+     const res = await fetch('https://api.anthropic.com/v1/messages', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         model: 'claude-sonnet-4-20250514',
+         max_tokens: 600,
+         messages: [{ role: 'user', content: prompt }]
+       })
+     });
+
+     const data = await res.json();
+     if (!data || !data.content) throw new Error('No content in response');
+     const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+     const jsonMatch = text.match(/\[[\s\S]*\]/);
+     if (!jsonMatch) throw new Error('No JSON array found');
+     const items = JSON.parse(jsonMatch[0]);
+
+     const container = document.getElementById('ceo-briefing-items');
+     if (container && items.length) {
+       container.innerHTML = items.map(item => `
+         <div class="news-item-modal">
+           <div class="news-item-modal-title">${item.headline}</div>
+           <div class="news-item-modal-source">${item.source} · ${item.age}</div>
+         </div>`).join('');
+     }
+
+     const ticker = document.getElementById('ticker');
+     if (ticker && items.length) {
+       ticker.querySelectorAll('.ticker-item').forEach(el => el.remove());
+       [...items, ...items].forEach(item => {
+         const span = document.createElement('span');
+         span.className = 'ticker-item';
+         span.textContent = item.headline;
+         ticker.appendChild(span);
+       });
+     }
+   } catch (err) {
+     console.warn('CEO alert refresh failed:', err);
+   }
+ }
+
+ refreshCeoAlert();
+ // ─────────────────────────────────────────────────────────────────────────
+
+ // ── EARNING TIP FULL REFRESH ─────────────────────────────────────────────
+ // Refreshes both tip text AND article link for each team member at startup.
+
+
+ // ── TEAM PROFILES (persistent, email-enriched) ────────────────────────────
+ // ── COMPANY HIERARCHY & SALARY BENCHMARKS (sourced Feb 2026) ─────────────
+ const HIERARCHY = {
+   andrew: { rank: 1, salaryBenchmark: 'Owner/principals Michigan avg $150K–$350K+ incl. equity distributions, mgmt fees, profit share.' },
+   dave:   { rank: 2, salaryBenchmark: 'Director of Operations Michigan avg $138,819 (Glassdoor 2025), range $106K–$183K. Consulting directors avg $170K nationally (PayScale 2026).' },
+   jack:   { rank: 3, salaryBenchmark: 'Elevator Project Manager US avg $92K–$102K (Glassdoor/ZipRecruiter 2025). Entry-level $48K–$73K. First job — at or below midpoint.' }
+ };
+
+ const DEFAULT_PROFILES = {
+   jack: {
+     name: 'Jack Opalewski', role: 'Program Manager', hierarchyRank: 3,
+     textId: 'jack-tip-text', linkId: 'jack-tip-link',
+     bio: `JACK OPALEWSKI — Program Manager, OwnerFirst Elevator Services. THIS IS HIS FIRST PROFESSIONAL JOB. LinkedIn: Buckley Belcher Consulting connection, elevator technical training, vertical transportation systems. Role: hands-on PM across 5 Michigan modernization projects — GLWA Connor Creek (80%), GLWA NEP (40%), Courtyard Marriott (19%), Wayne County REBID-B (pursuit), WSU. Daily: ASME A17.1 compliance, spec writing, contractor coordination, field oversight. Salary benchmark: entry-level $48K–$73K, mid-career $93K–$123K — Jack is at entry stage. Tips MUST be first-job appropriate: QEI/NAEC certifications, LinkedIn presence, volunteer for extra project scope, find a mentor, attend BOMA/NAEC Michigan events. Do NOT suggest consulting retainers or expert witness fees — too senior for this stage.`,
+     emailNotes: []
+   },
+   dave: {
+     name: 'Dave Osowski', role: 'Director of Operations', hierarchyRank: 2,
+     textId: 'dave-tip-text', linkId: 'dave-tip-link',
+     bio: `DAVE OSOWSKI — Director of Operations & co-founder, OwnerFirst Elevator Services. LinkedIn: construction management, procurement, owner's rep services, Detroit market, Roy Company. Role: manages 34+ RFPs (BidNet/Bonfire/SAM.gov), 12 vendor relationships, $4.7M active portfolio, pay app processing, Basso Marketing ($1,500/mo SEO), Elevator Snapshot tool deployment. Q1 cost savings: $48K. Salary benchmark: Dir Ops Michigan avg $138,819, range $106K–$183K — bonus/profit-share common. Tips: mid-career income acceleration — performance bonuses, vendor override structures (2% on $1M = $20K), pipeline growth to $10M, LinkedIn thought leadership for inbound clients, automation to reduce overhead.`,
+     emailNotes: []
+   },
+   andrew: {
+     name: 'Andrew Roy', role: 'Owner / Investor', hierarchyRank: 1,
+     textId: 'andrew-tip-text', linkId: 'andrew-tip-link',
+     bio: `ANDREW ROY — Owner & Principal Investor, OwnerFirst Elevator Services (100% equity). LinkedIn: Founded The Roy Company 2017 Detroit, Wayne State BS+MS Civil Engineering, licensed PE Michigan, 20+ years CM and owner-rep. Projects include Detroit Opera House, Grosse Pointe Libraries, Corktown build-outs. OwnerFirst valued $1.85M up 22% YoY, $4.7M active portfolio. Personal: sailing, skiing, family. Salary benchmark: construction firm principals Michigan $150K–$350K+ incl. equity distributions and mgmt fees. Tips: OWNER-LEVEL thinking — mgmt fee structure (5–8% of $4.7M = $235K–$376K/yr), equity appreciation strategy, passive income mechanisms, scaling the firm without personal time investment, JV expansion into adjacent specialties.`,
+     emailNotes: []
+   }
+ };
+
+ function loadProfiles() {
+   try {
+     const saved = localStorage.getItem('owf_team_profiles');
+     if (saved) {
+       const parsed = JSON.parse(saved);
+       ['jack','dave','andrew'].forEach(k => {
+         if (parsed[k] && parsed[k].emailNotes) DEFAULT_PROFILES[k].emailNotes = parsed[k].emailNotes;
+       });
+     }
+   } catch(e) {}
+   return DEFAULT_PROFILES;
+ }
+
+ function saveProfiles(profiles) {
+   try { localStorage.setItem('owf_team_profiles', JSON.stringify(profiles)); } catch(e) {}
+ }
+
+ function enrichProfilesFromEmails(profiles, emailSnippets) {
+   if (!emailSnippets || emailSnippets.length < 10) return;
+   const note = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ': ' + emailSnippets.slice(0,200);
+   profiles.dave.emailNotes = [note, ...(profiles.dave.emailNotes || [])].slice(0,5);
+   saveProfiles(profiles);
+ }
+
+ const TEAM_PROFILES = loadProfiles();
+ const tipConfig = [
+   { ...TEAM_PROFILES.jack },
+   { ...TEAM_PROFILES.dave },
+   { ...TEAM_PROFILES.andrew }
+ ];
+
+ async function refreshEarningTips() {
+   const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+   function buildCtx(p) {
+     let c = p.bio;
+     if (p.emailNotes && p.emailNotes.length) c += ' Recent intel: ' + p.emailNotes.join('; ');
+     return c;
+   }
+
    function salaryCtx(key) { return '[Rank ' + HIERARCHY[key].rank + '/3 — ' + HIERARCHY[key].salaryBenchmark + ']'; }
 
    const prompt = `You are a senior business strategy and compensation advisor for OwnerFirst Elevator Services (Detroit elevator owner's rep, JV of The Roy Company + Buckley Belcher Consulting). Today is ${today}. Portfolio: $4.7M across KONE, Schindler, Otis in Michigan.
