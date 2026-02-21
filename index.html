@@ -1663,7 +1663,10 @@ Rules:
      return c;
    }
 
-   function salaryCtx(key) { return '[Rank ' + HIERARCHY[key].rank + '/3 — ' + HIERARCHY[key].salaryBenchmark + ']'; }
+   function salaryCtx(key) {
+     const h = HIERARCHY[key];
+     return `[Rank ${h.rank} of 3 — ${h.salaryBenchmark.note}]`;
+   }
 
    const prompt = `You are a senior business strategy and compensation advisor for OwnerFirst Elevator Services (Detroit elevator owner's rep, JV of The Roy Company + Buckley Belcher Consulting). Today is ${today}. Portfolio: $4.7M across KONE, Schindler, Otis in Michigan.
 
